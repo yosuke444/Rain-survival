@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Rain Survival</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yomogi&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<!-- スマホ用ボタン -->
+<div id="touch" class="hidden">
+  <div class="pad left">
+    <button data-key="left" class="b1">◀</button>
+    <button data-key="down" class="b2">▼</button>
+    <button data-key="right" class="b3">▶</button>
+  </div>
+  <div class="pad right">
+    <button data-key="menu" class="b4 small">X<span>もちもの</span></button>
+    <button data-key="up" class="b5">▲<span>ジャンプ</span></button>
+    <button data-key="use" class="b6">Z<span>つかう</span></button>
+  </div>
+</div>
+
+<div id="loading">よみこみ中…</div>
+
+<script src="js/config.js"></script>
+<script src="js/sketch.js"></script>
+<script src="js/data.js"></script>
+<script src="js/art.js"></script>
+<script src="js/world.js"></script>
+<script src="js/player.js"></script>
+<script src="js/inventory.js"></script>
+<script src="js/rain.js"></script>
+<script src="js/input.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
