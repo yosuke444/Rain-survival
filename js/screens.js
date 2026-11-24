@@ -7,6 +7,8 @@
   const RS = window.RS, S = RS.sketch, COL = RS.COL;
   const ui = RS.ui;
 
+  const recLabel = (m) => (m === 0 ? '無制限' : m >= 60 ? (m / 60) + '時間' : m + '分');
+
   // 各画面のボタン。act はボタンを押したときの動き
   RS.SCREENS = {
     title: {
@@ -33,6 +35,11 @@
       title: 'せってい',
       items: (g) => [
         { label: '採掘・設置のモード：' + (g.mode === 'auto' ? 'オート' : 'マウス'), act: () => g.toggleMode() },
+        { label: '最大録画時間：' + recLabel(g.settings.recMax), act: () => {
+          const ch = RS.CONFIG.REC_MAX_CHOICES;
+          g.settings.recMax = ch[(ch.indexOf(g.settings.recMax) + 1) % ch.length];
+          RS.saveSettings(g.settings);
+        } },
         { label: 'もどる', act: () => g.backScreen() },
       ],
     },

@@ -64,7 +64,9 @@
       L.mode = { x: W - 10 - modeW, y: 8 + s + 8, w: modeW, h: modeH };
       L.nameY = 8 + s + 8 + s * 1.5;
       L.pause = { x: W - 10 - pauseW, y: 8 + s + 16 + modeH, w: pauseW, h: modeH };
-      L.photo = { x: L.pause.x - 8 - pauseW, y: L.pause.y, w: pauseW, h: modeH };
+      // スマホは右側に縦にならべる
+      L.photo = { x: L.pause.x, y: L.pause.y + modeH + 8, w: pauseW, h: modeH };
+      L.rec = { x: L.pause.x, y: L.photo.y + modeH + 8, w: pauseW, h: modeH };
     } else {
       L.hotbar = { x: Math.round((W - hbW) / 2), y: H - s - 12, w: hbW, h: s };
       L.bars = { x: 12, y: 12 };
@@ -72,6 +74,7 @@
       L.nameY = H - s - 12 - s * 0.45;
       L.pause = { x: L.mode.x - 8 - pauseW, y: 12, w: pauseW, h: modeH };
       L.photo = { x: L.pause.x - 8 - pauseW, y: 12, w: pauseW, h: modeH };
+      L.rec = { x: L.photo.x - 8 - pauseW, y: 12, w: pauseW, h: modeH };
     }
     return L;
   };
@@ -81,6 +84,7 @@
     if (ui.inRect(L.mode, x, y)) return 'mode';
     if (ui.inRect(L.pause, x, y)) return 'pause';
     if (ui.inRect(L.photo, x, y)) return 'photo';
+    if (ui.inRect(L.rec, x, y)) return 'rec';
     if (ui.inRect(L.hotbar, x, y)) return Math.min(8, Math.floor((x - L.hotbar.x) / L.s));
     return null;
   };
@@ -123,6 +127,24 @@
     const ph = L.photo;
     S.rect(g, ph.x, ph.y, ph.w, ph.h, { fill: COL.cream, stroke: COL.line, lw: 2, r: 10, seed: 55, amp: 1.2, step: 14 });
     ui.text(g, 'しゃしん' + (game.touch ? '' : ' (Q)'), ph.x + ph.w / 2, ph.y + ph.h / 2, s * 0.32, { align: 'center', maxW: ph.w - 10 });
+    const rc = L.rec, recOn = RS.rec.active;
+    S.rect(g, rc.x, rc.y, rc.w, rc.h, { fill: recOn ? '#f6c9c0' : COL.cream, stroke: COL.line, lw: 2, r: 10, seed: 57, amp: 1.2, step: 14 });
+    ui.text(g, (recOn ? 'とめる' : 'ろくが') + (game.touch ? '' : ' (E)'), rc.x + rc.w / 2, rc.y + rc.h / 2, s * 0.32, { align: 'center', maxW: rc.w - 10 });
+    // 録画中・変換中の表示（録画には写らない）
+    if (recOn || RS.rec.progress != null) {
+      let msg;
+      if (recOn) {
+        const t = Math.floor(RS.rec.elapsed());
+        const hh = Math.floor(t / 3600), mm = Math.floor(t / 60) % 60, ss = t % 60;
+        msg = '録画中 ' + (hh ? hh + ':' + String(mm).padStart(2, '0') : mm) + ':' + String(ss).padStart(2, '0');
+      } else msg = 'mp4 に変換中… ' + Math.round(RS.rec.progress * 100) + '%';
+      const ry = game.touch ? L.bars.y + s * 2 : L.mode.y + L.mode.h + s * 0.45, fs = s * 0.36;
+      if (recOn && Math.floor(game.time * 2) % 2 === 0) {
+        g.fillStyle = '#d9564f';
+        g.beginPath(); g.arc(game.W / 2 - fs * 3.6, ry, fs * 0.3, 0, Math.PI * 2); g.fill();
+      }
+      ui.text(g, msg, game.W / 2, ry, fs, { align: 'center', outline: COL.cream });
+    }
 
     // 手持ち
     const hb = L.hotbar;

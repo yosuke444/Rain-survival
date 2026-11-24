@@ -142,14 +142,15 @@
   art.drawTileArt = drawTileArt;
 
   function makeTile(type, v, u, dpr) {
-    const pad = PAD[type] || 0;
-    const size = u * (1 + 2 * pad);
+    // はみ出す量はピクセル単位で丸める（半端な位置だとマスの境目にすき間の線が出るため）
+    const padPx = Math.round((PAD[type] || 0) * u);
+    const size = u + 2 * padPx;
     const cv = mk(size * dpr, size * dpr);
     const g = cv.getContext('2d');
     g.scale(dpr, dpr);
-    g.translate(pad * u, pad * u);
+    g.translate(padPx, padPx);
     drawTileArt(g, type, u, RS.rng(type * 131 + v * 17 + 3));
-    return { cv, pad };
+    return { cv, padPx };
   }
 
   // ---------------- アイテムのアイコン（64x64 基準） ----------------

@@ -62,10 +62,17 @@ RS.CONFIG = {
 
 // ---- 設定の保存（ブラウザ内。消えても初期値で動く） ----
 RS.loadSettings = function () {
-  const d = { mode: 'auto' };
+  const d = { mode: 'auto', recMax: 60 }; // recMax: 最大録画時間（分。0 = 無制限）。初期は1時間
   try { Object.assign(d, JSON.parse(localStorage.getItem('rs.settings') || '{}')); } catch (_) { /* 初期値のまま */ }
   return d;
 };
 RS.saveSettings = function (s) {
   try { localStorage.setItem('rs.settings', JSON.stringify(s)); } catch (_) { /* 保存できなくても続ける */ }
 };
+
+// ---- 録画 ----
+RS.CONFIG.REC_FPS = 30;              // 録画のコマ数（1秒あたり）
+RS.CONFIG.REC_BITRATE = 2500000;     // 録画の画質（ビットレート）。上げるときれいになるが、ファイルとメモリが増える
+RS.CONFIG.REC_MAX_CHOICES = [30, 60, 120, 0]; // 最大録画時間の選択肢（分。0 = 無制限）
+// mp4 変換の本体（約 32MB）の置き場所
+RS.CONFIG.FFMPEG_CORE_URL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/';

@@ -121,6 +121,8 @@
 
       // 撮影はいつでもできる（UI は写さない）
       if (inp.pressed('photo')) this.photoReq = true;
+      if (inp.pressed('rec')) RS.rec.toggle(this);
+      RS.rec.check(this);
       this.flashT = Math.max(0, (this.flashT || 0) - dt);
       // タイトル・ゲーム中メニュー・設定を開いている間は、ゲームは止める（雨だけ動かす）
       if (this.screens.length) {
@@ -270,6 +272,7 @@
           if (h === 'mode') { this.toggleMode(); inp.markUI(e.id); continue; }
           if (h === 'pause') { if (this.state === 'play') this.openScreen('pause'); inp.markUI(e.id); continue; }
           if (h === 'photo') { this.photoReq = true; inp.markUI(e.id); continue; }
+          if (h === 'rec') { RS.rec.toggle(this); inp.markUI(e.id); continue; }
           if (typeof h === 'number' && (!mouse || this.mode === 'mouse')) {
             this.inv.sel = h; this.showSelName(); inp.markUI(e.id); continue;
           }
@@ -572,11 +575,13 @@
       this.rain.drawNormal(g, this);
       this.drawUmbrella(g);
       this.drawTerrain(g);
-      if (!this.photoReq) this.drawTarget(g); // 写真には狙いの枠を写さない
       this.drawPlayer(g);
       this.rain.drawAcid(g, this);
       this.drawFx(g);
+      // ここまでがゲーム画面。写真・録画には UI と狙いの枠を写さない
       if (this.photoReq) this.takePhoto();
+      RS.rec.frame(this.canvas);
+      this.drawTarget(g);
       if (!this.screens.includes('title')) {
         RS.ui.drawHUD(g, this);
         if (this.state === 'menu') RS.ui.drawMenu(g, this);
@@ -684,7 +689,7 @@
 
     drawTile(g, t, x, y, ox, oy, Tp, A) {
       const tex = A.tiles[t][(RS.hash(x, y, 5) * 4) | 0];
-      const pad = tex.pad * Tp;
+      const pad = tex.padPx;
       g.drawImage(tex.cv, ox + x * Tp - pad, oy + y * Tp - pad, Tp + pad * 2, Tp + pad * 2);
     }
 
