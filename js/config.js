@@ -59,3 +59,13 @@ RS.CONFIG = {
   // ---- 操作 ----
   LONG_PRESS_MS: 400,    // スマホの長おしと判定する時間（ミリ秒）
 };
+
+// ---- 設定の保存（ブラウザ内。消えても初期値で動く） ----
+RS.loadSettings = function () {
+  const d = { mode: 'auto' };
+  try { Object.assign(d, JSON.parse(localStorage.getItem('rs.settings') || '{}')); } catch (_) { /* 初期値のまま */ }
+  return d;
+};
+RS.saveSettings = function (s) {
+  try { localStorage.setItem('rs.settings', JSON.stringify(s)); } catch (_) { /* 保存できなくても続ける */ }
+};

@@ -15,7 +15,11 @@
       this.player = new RS.Player();
       this.inv = new RS.Inventory();
       this.rain = new RS.Rain();
-      this.mode = 'auto';          // 'auto' または 'mouse'
+      this.settings = RS.loadSettings();
+      this.mode = this.settings.mode; // 'auto' または 'mouse'
+      this.screens = ['title'];    // 重ねて表示する画面（空ならゲーム中）
+      this.screenCursor = 0;
+      this.started = false;
       this.state = 'play';         // 'play' / 'menu' / 'dead'
       this.menu = { size: 2, cursor: 0, lastPtr: null };
       this.cam = { x: 0, y: 0 };
@@ -56,7 +60,7 @@
     // メニューを開いている間はボタンを隠す（メニューはタップで操作し、×で閉じる）
     showTouch() {
       const box = document.getElementById('touch');
-      const hide = !this.touch || this.state === 'menu';
+      const hide = !this.touch || this.state === 'menu' || this.screens.length > 0;
       box.classList.toggle('hidden', hide);
       if (hide) {
         // 隠したボタンが押されたままにならないように離す
@@ -114,7 +118,17 @@
       this.time += dt;
       const inp = this.input, p = this.player;
 
+      // タイトル・ゲーム中メニュー・設定を開いている間は、ゲームは止める（雨だけ動かす）
+      if (this.screens.length) {
+        this.updateScreen();
+        this.rain.update(dt, this.viewRect(), this.world);
+        return;
+      }
       if (inp.pressed('mode')) this.toggleMode();
+      if (inp.pressed('esc')) {
+        if (this.state === 'menu') this.closeMenu();
+        else if (this.state === 'play') { this.openScreen('pause'); return; }
+      }
       for (let i = 1; i <= 9; i++) if (inp.pressed('slot' + i)) { this.inv.sel = i - 1; this.showSelName(); }
 
       this.ptrUsePressed = false;
@@ -156,12 +170,66 @@
 
     toggleMode() {
       this.mode = this.mode === 'auto' ? 'mouse' : 'auto';
+      this.settings.mode = this.mode;
+      RS.saveSettings(this.settings);
       this.mine.key = null;
       this.toast(this.mode === 'auto'
         ? 'オートモード：向いている方向の いちばん近い所'
         : 'マウスモード：' + (this.touch ? 'タップした所' : 'カーソルの先') + '（' + C.MOUSE_REACH + 'マスまで）');
     }
     toast(msg) { this.toastMsg = msg; this.toastT = 2.4; }
+
+    // ---------------- 画面の切り替え ----------------
+    openScreen(name) {
+      this.screens.push(name);
+      this.screenCursor = 0;
+      this.mine.key = null;
+      this.showTouch();
+    }
+    backScreen() {
+      if (this.screens.length <= 1 && this.screens[0] === 'title') return;
+      this.screens.pop();
+      this.screenCursor = 0;
+      this.mineLock = true; this.placeCd = 0.3;
+      this.showTouch();
+    }
+    startGame() {
+      this.started = true;
+      this.screens = [];
+      this.mineLock = true; this.placeCd = 0.3; // 決定に使った Z で掘ったり置いたりしない
+      this.showTouch();
+    }
+    toTitle() {
+      this.screens = ['title'];
+      this.screenCursor = 0;
+      this.showTouch();
+    }
+    updateScreen() {
+      const inp = this.input;
+      const name = this.screens[this.screens.length - 1];
+      const L = RS.ui.screenLayout(this, name);
+      const n = L.buttons.length;
+      this.screenCursor = Math.min(this.screenCursor, n - 1);
+      for (const e of inp.events) {
+        const mouse = e.ptype === 'mouse';
+        if (!mouse && !this.touch) { this.touch = true; }
+        // マウスはマウスモードのときだけ。タッチはいつでも
+        if (e.type === 'down' && (!mouse ? false : (this.mode === 'mouse' && e.button === 0))) this.pressScreenAt(L, e.x, e.y);
+        if (e.type === 'up' && !mouse && !e.long) this.pressScreenAt(L, e.x, e.y);
+      }
+      if (this.screens[this.screens.length - 1] !== name) return; // 画面が変わった
+      if (inp.pressed('mode')) this.toggleMode();
+      if (this.mode === 'auto') {
+        if (inp.pressed('up')) this.screenCursor = (this.screenCursor + n - 1) % n;
+        if (inp.pressed('down')) this.screenCursor = (this.screenCursor + 1) % n;
+        if (inp.pressed('use')) L.buttons[this.screenCursor].act();
+      }
+      if (inp.pressed('esc') || inp.pressed('menu')) this.backScreen();
+    }
+    pressScreenAt(L, x, y) {
+      const i = L.buttons.findIndex((b) => RS.ui.inRect(b, x, y));
+      if (i >= 0) { this.screenCursor = i; L.buttons[i].act(); }
+    }
     showSelName() { this.selNameT = 1.8; }
 
     // ---------------- ポインタ（マウス・タッチ） ----------------
@@ -195,6 +263,7 @@
         if (e.type === 'down') {
           const h = RS.ui.hudHit(this, e.x, e.y);
           if (h === 'mode') { this.toggleMode(); inp.markUI(e.id); continue; }
+          if (h === 'pause') { if (this.state === 'play') this.openScreen('pause'); inp.markUI(e.id); continue; }
           if (typeof h === 'number' && (!mouse || this.mode === 'mouse')) {
             this.inv.sel = h; this.showSelName(); inp.markUI(e.id); continue;
           }
@@ -501,8 +570,11 @@
       this.drawPlayer(g);
       this.rain.drawAcid(g, this);
       this.drawFx(g);
-      RS.ui.drawHUD(g, this);
-      if (this.state === 'menu') RS.ui.drawMenu(g, this);
+      if (!this.screens.includes('title')) {
+        RS.ui.drawHUD(g, this);
+        if (this.state === 'menu') RS.ui.drawMenu(g, this);
+      }
+      if (this.screens.length) RS.ui.drawScreen(g, this, this.screens[this.screens.length - 1]);
     }
 
     drawUmbrella(g) {

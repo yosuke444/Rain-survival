@@ -15,6 +15,7 @@
     KeyX: 'menu',                        // メニュー（インベントリ）
     KeyC: 'one',                         // メニューで1個だけ置く（仮）
     KeyM: 'mode',                        // オート/マウスの切り替え（仮）
+    Escape: 'esc',                       // ゲーム中メニュー（仮）
   };
   for (let i = 1; i <= 9; i++) { KEYMAP['Digit' + i] = 'slot' + i; KEYMAP['Numpad' + i] = 'slot' + i; }
 
