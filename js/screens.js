@@ -14,6 +14,7 @@
       big: true,
       items: (g) => [
         { label: g.started ? 'つづける' : 'はじめる', act: () => g.startGame() },
+        { label: 'キャラメイク', act: () => g.openScreen('charmake') },
         { label: 'せってい', act: () => g.openScreen('settings') },
       ],
     },
@@ -21,6 +22,7 @@
       title: 'メニュー',
       items: (g) => [
         { label: 'ゲームにもどる', act: () => g.backScreen() },
+        { label: 'キャラメイク', act: () => g.openScreen('charmake') },
         { label: 'せってい', act: () => g.openScreen('settings') },
         { label: 'タイトルへ', act: () => g.toTitle() },
       ],

@@ -20,7 +20,7 @@
       this.screens = ['title'];    // 重ねて表示する画面（空ならゲーム中）
       this.screenCursor = 0;
       this.started = false;
-      this.look = JSON.parse(JSON.stringify(RS.DEFAULT_LOOK)); // キャラの見た目
+      this.look = RS.loadLook(); // キャラの見た目
       this.state = 'play';         // 'play' / 'menu' / 'dead'
       this.menu = { size: 2, cursor: 0, lastPtr: null };
       this.cam = { x: 0, y: 0 };
@@ -208,6 +208,7 @@
     updateScreen() {
       const inp = this.input;
       const name = this.screens[this.screens.length - 1];
+      if (RS.SCREENS[name].custom) { RS.SCREENS[name].update(this); return; }
       const L = RS.ui.screenLayout(this, name);
       const n = L.buttons.length;
       this.screenCursor = Math.min(this.screenCursor, n - 1);
@@ -575,7 +576,11 @@
         RS.ui.drawHUD(g, this);
         if (this.state === 'menu') RS.ui.drawMenu(g, this);
       }
-      if (this.screens.length) RS.ui.drawScreen(g, this, this.screens[this.screens.length - 1]);
+      if (this.screens.length) {
+        const name = this.screens[this.screens.length - 1];
+        if (RS.SCREENS[name].custom) RS.SCREENS[name].draw(g, this);
+        else RS.ui.drawScreen(g, this, name);
+      }
     }
 
     drawUmbrella(g) {
