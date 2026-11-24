@@ -19,6 +19,7 @@
       this.surfCache = new Map();
       this.saplings = [];
       this.lk = null; this.lc = null;
+      this.theme = RS.THEMES.plains; // この世界の色
       // 傘：中心のマスの真ん中に立つ
       this.umb = { x: 0.5, rim: this.surface(0) - C.UMBRELLA_HEIGHT };
       this.umb.peak = this.umb.rim - 6;

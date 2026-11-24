@@ -18,6 +18,11 @@
     cream: '#fff6e6', slot: '#f6e7cc', accent: '#e58c6c',
   };
 
+  // 世界ごとの色（背景色・ブロックや傘の縁の色）。新しい世界はここに足していく
+  RS.THEMES = {
+    plains: { name: '平原', sky: '#a9d6f5', line: '#6b4a2f' }, // 青寄りの水色（仮の色）
+  };
+
   // キャラクターの見た目（キャラメイクは今回の範囲外のため固定）
   const LOOK = RS.LOOK = { hair: '#8a5a3c', skin: '#ffe4cc', shirt: '#f4a9a0', pants: '#86a9cf', shoes: '#9a7352' };
 
@@ -56,7 +61,7 @@
 
   // 1マス分のブロックの絵（u = マスの大きさ）
   function drawTileArt(g, type, u, r) {
-    const L = COL.line;
+    const L = art.lineColor || COL.line;
     switch (type) {
       case T.DIRT:
         g.fillStyle = COL.dirt; g.fillRect(0, 0, u, u);
@@ -299,8 +304,9 @@
   };
 
   // 画面サイズが変わるたびに作り直す
-  art.build = function (u, dpr) {
+  art.build = function (u, dpr, lineColor) {
     art.T = u; art.dpr = dpr;
+    art.lineColor = lineColor || COL.line;
     art.tiles = [];
     for (let t = 1; t < RS.TILES.length; t++) {
       art.tiles[t] = [];

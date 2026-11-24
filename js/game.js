@@ -74,7 +74,7 @@
       this.canvas.style.width = W + 'px';
       this.canvas.style.height = H + 'px';
       this.T = Math.round(RS.clamp(Math.min(W / C.VIEW_TILES_W, H / C.VIEW_TILES_H), C.TILE_MIN, C.TILE_MAX));
-      RS.art.build(this.T, this.dpr);
+      RS.art.build(this.T, this.dpr, this.world.theme.line);
     }
 
     // 傘の下（中心のすぐ横）で目をさます
@@ -492,9 +492,8 @@
     render() {
       const g = this.ctx;
       g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-      g.fillStyle = COL.sky;
+      g.fillStyle = this.world.theme.sky;
       g.fillRect(0, 0, this.W, this.H);
-      this.drawHills(g);
       this.rain.drawNormal(g, this);
       this.drawUmbrella(g);
       this.drawTerrain(g);
@@ -504,30 +503,6 @@
       this.drawFx(g);
       RS.ui.drawHUD(g, this);
       if (this.state === 'menu') RS.ui.drawMenu(g, this);
-    }
-
-    drawHills(g) {
-      const Tp = this.T, W = this.W, H = this.H;
-      const layers = [
-        { par: 0.2, col: '#c3e3d6', line: 'rgba(107,74,47,0.25)', amp: 4, base: 0.5, s: 301 },
-        { par: 0.35, col: '#b0d8bd', line: 'rgba(107,74,47,0.35)', amp: 3, base: 0.62, s: 302 },
-      ];
-      for (const L of layers) {
-        const baseY = H * L.base + (this.world.surface(0) - 6 - this.cam.y) * Tp * L.par;
-        if (baseY > H + 10) continue;
-        const pts = [];
-        for (let sx = -24; sx <= W + 24; sx += 24) {
-          const wx = this.cam.x * L.par + (sx - W / 2) / Tp;
-          const h = (this.world.fbm1(wx / 14, L.s) - 0.5) * 2 * L.amp * Tp;
-          pts.push([sx, baseY + h]);
-        }
-        g.beginPath();
-        S.trace(g, pts, false);
-        g.lineTo(W + 24, H + 10); g.lineTo(-24, H + 10); g.closePath();
-        g.fillStyle = L.col; g.fill();
-        g.beginPath(); S.trace(g, pts, false);
-        g.strokeStyle = L.line; g.lineWidth = 2; g.stroke();
-      }
     }
 
     drawUmbrella(g) {
@@ -541,7 +516,7 @@
 
       // 柱
       S.rect(g, X(x0) - 0.18 * Tp, Y(peak), 0.36 * Tp, (ground - peak + 0.5) * Tp,
-        { fill: '#f4ead8', stroke: COL.line, lw, r: Tp * 0.12, seed: 77, amp: Tp * 0.03, step: Tp * 1.5 });
+        { fill: '#f4ead8', stroke: w.theme.line, lw, r: Tp * 0.12, seed: 77, amp: Tp * 0.03, step: Tp * 1.5 });
 
       // 布（8枚）
       const N = 8;
@@ -557,10 +532,10 @@
         for (let k = 8; k >= 0; k--) pts.push(rib(i + 1, k / 8));
         const a = tip(i + 1), b = tip(i);
         pts.push([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2 - 0.9]);
-        S.shape(g, pts.map(([x, y]) => [X(x), Y(y)]), { fill: colors[i % 4], stroke: COL.line, lw, seed: 200 + i, amp: Tp * 0.05, step: Tp * 1.5 });
+        S.shape(g, pts.map(([x, y]) => [X(x), Y(y)]), { fill: colors[i % 4], stroke: w.theme.line, lw, seed: 200 + i, amp: Tp * 0.05, step: Tp * 1.5 });
       }
       // てっぺんの飾り
-      S.ellipse(g, X(x0), Y(peak) - 0.25 * Tp, 0.32 * Tp, 0.32 * Tp, { fill: '#f4ead8', stroke: COL.line, lw, seed: 230, amp: Tp * 0.02 });
+      S.ellipse(g, X(x0), Y(peak) - 0.25 * Tp, 0.32 * Tp, 0.32 * Tp, { fill: '#f4ead8', stroke: w.theme.line, lw, seed: 230, amp: Tp * 0.02 });
     }
 
     drawTerrain(g) {
@@ -614,7 +589,7 @@
           if (!TL[w.get(x + 1, y)].terrain) edge(px + Tp, py, px + Tp, py + Tp, E[(RS.hash(x + 1, y, 2) * 8) | 0]);
         }
       }
-      g.strokeStyle = COL.line;
+      g.strokeStyle = w.theme.line;
       g.lineWidth = Math.max(1.5, Tp * 0.075);
       g.lineCap = 'round'; g.lineJoin = 'round';
       g.stroke();
