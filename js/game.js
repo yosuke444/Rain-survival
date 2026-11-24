@@ -20,6 +20,7 @@
       this.screens = ['title'];    // 重ねて表示する画面（空ならゲーム中）
       this.screenCursor = 0;
       this.started = false;
+      this.look = JSON.parse(JSON.stringify(RS.DEFAULT_LOOK)); // キャラの見た目
       this.state = 'play';         // 'play' / 'menu' / 'dead'
       this.menu = { size: 2, cursor: 0, lastPtr: null };
       this.cam = { x: 0, y: 0 };
@@ -706,26 +707,49 @@
       g.setLineDash([]);
     }
 
+    // プレイヤーの今の状態からポーズを決める
+    playerPose() {
+      const p = this.player, t = this.time;
+      const pose = RS.char.pose();
+      if (!p.onGround) {
+        pose.legF = { a: 0.7, k: 1.0 }; pose.legB = { a: -0.25, k: 0.5 };
+        pose.armF = { a: 0.9, e: 0.6 }; pose.armB = { a: 0.7, e: 0.5 };
+      } else if (Math.abs(p.vx) > 0.5) {
+        const ph = p.walkT * 4.2, sn = Math.sin(ph);
+        pose.legF = { a: sn * 0.55, k: Math.max(0, -Math.cos(ph)) * 0.7 };
+        pose.legB = { a: -sn * 0.55, k: Math.max(0, Math.cos(ph)) * 0.7 };
+        pose.armF = { a: 0.1 - sn * 0.5, e: 0.4 };
+        pose.armB = { a: sn * 0.5, e: 0.4 };
+        pose.bob = -Math.abs(Math.cos(ph)) * 0.03;
+      } else {
+        pose.bob = Math.sin(t * 2) * 0.008; // 呼吸
+      }
+      if (p.swinging) pose.armF = { a: 1.6 + 0.9 * Math.cos(t * 14), e: 0.2 };
+      else if (p.swingT > 0) pose.armF = { a: 0.4 + (p.swingT / 0.25) * 1.2, e: 0.3 };
+      if ((t % 3.7) < 0.13) pose.eyes = 'blink'; // まばたき
+      if (p.hurtT > 0) { pose.eyes = 'squeeze'; pose.mouth = 'open'; }
+      return pose;
+    }
+
     drawPlayer(g) {
       if (this.state === 'dead') return;
       const p = this.player, Tp = this.T;
       const fx = this.ox() + p.cx() * Tp, fy = this.oy() + (p.y + p.h) * Tp;
-      const A = RS.art.player;
-      let frame = 'idle';
-      if (!p.onGround) frame = 'jump';
-      else if (Math.abs(p.vx) > 0.5) frame = Math.floor(p.walkT * 2.2) % 2 ? 'walk1' : 'walk2';
-      const sp = A[frame];
+      const held = this.inv.held();
+      const drawHeld = held ? (hg) => {
+        const it = RS.ITEMS[held.id];
+        const big = !!(it.tool || held.id === 'stick');
+        const sz = Tp * (big ? 0.7 : 0.42);
+        hg.save();
+        if (big) { hg.rotate(Math.PI / 4); hg.drawImage(RS.art.icons[held.id], -0.22 * sz, -0.78 * sz, sz, sz); }
+        else hg.drawImage(RS.art.icons[held.id], -sz / 2, -sz * 0.15, sz, sz);
+        hg.restore();
+      } : null;
       g.save();
       g.translate(Math.round(fx), Math.round(fy));
       g.scale(p.face, 1);
-      if (p.hurtT > 0 && Math.floor(p.hurtT * 20) % 2) g.globalAlpha = 0.45;
-      g.drawImage(sp.cv, -sp.ox, -sp.oy, sp.w, sp.h);
-      let ang;
-      if (p.swinging) ang = 1.5 + 0.9 * Math.cos(this.time * 14);
-      else if (p.swingT > 0) ang = 0.3 + (p.swingT / 0.25) * 1.4;
-      else if (frame === 'walk1' || frame === 'walk2') ang = 0.25 + Math.sin(p.walkT * 3) * 0.35;
-      else ang = 0.25;
-      RS.art.drawArm(g, Tp, ang, sp.bob, this.inv.held());
+      if (p.hurtT > 0 && Math.floor(p.hurtT * 20) % 2) g.globalAlpha = 0.5;
+      RS.char.draw(g, Tp, this.look, this.playerPose(), drawHeld, this.time);
       g.restore();
     }
 

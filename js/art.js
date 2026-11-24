@@ -23,8 +23,6 @@
     plains: { name: '平原', sky: '#a9d6f5', line: '#6b4a2f' }, // 青寄りの水色（仮の色）
   };
 
-  // キャラクターの見た目（キャラメイクは今回の範囲外のため固定）
-  const LOOK = RS.LOOK = { hair: '#8a5a3c', skin: '#ffe4cc', shirt: '#f4a9a0', pants: '#86a9cf', shoes: '#9a7352' };
 
   const art = RS.art = { FONT: "'Yomogi','Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif" };
 
@@ -233,76 +231,6 @@
     return icons;
   }
 
-  // ---------------- キャラクター（2.5頭身） ----------------
-  function leg(g, u, x, pc, sc, seed, lift) {
-    S.rect(g, (x - 0.07) * u, (-0.46 - lift) * u, 0.14 * u, 0.4 * u, { fill: pc, stroke: COL.line, lw: u * 0.05, r: 0.05 * u, seed, amp: u * 0.01, step: u * 0.12 });
-    S.ellipse(g, (x + 0.03) * u, (-0.06 - lift) * u, 0.11 * u, 0.07 * u, { fill: sc, stroke: COL.line, lw: u * 0.05, seed: seed + 1, amp: u * 0.01, n: 12 });
-  }
-
-  function drawBody(g, u, f) {
-    const L = COL.line;
-    const o = (seed, extra) => Object.assign({ stroke: L, lw: u * 0.05, seed, amp: u * 0.012, step: u * 0.12 }, extra);
-    const bob = f.bob;
-    leg(g, u, f.b, shade(LOOK.pants, 0.85), shade(LOOK.shoes, 0.85), 11, 0);
-    leg(g, u, f.a, LOOK.pants, LOOK.shoes, 13, f.lift || 0);
-    S.rect(g, -0.22 * u, (-0.87 + bob) * u, 0.12 * u, 0.34 * u, o(15, { fill: shade(LOOK.shirt, 0.85), r: 0.06 * u }));
-    S.rect(g, -0.22 * u, (-0.97 + bob) * u, 0.42 * u, 0.55 * u, o(17, { fill: LOOK.shirt, r: 0.13 * u }));
-    const hx = 0.03 * u, hy = (-1.33 + bob) * u;
-    S.ellipse(g, hx, hy, 0.4 * u, 0.36 * u, o(19, { fill: LOOK.skin, n: 18 }));
-    const hp = [[-0.41, 0.1], [-0.44, -0.12], [-0.3, -0.33], [0, -0.42], [0.3, -0.34], [0.43, -0.1], [0.41, 0.0],
-      [0.32, -0.12], [0.24, -0.04], [0.14, -0.15], [0.04, -0.06], [-0.06, -0.16], [-0.16, -0.06], [-0.2, 0.08],
-      [-0.28, 0.26], [-0.4, 0.24]].map(([x, y]) => [hx + x * u, hy + y * u]);
-    S.shape(g, hp, o(21, { fill: LOOK.hair }));
-    g.fillStyle = '#4a3424';
-    for (const ex of [0.13, 0.29]) {
-      g.beginPath(); g.ellipse(hx + ex * u, hy + 0.05 * u, 0.035 * u, 0.055 * u, 0, 0, Math.PI * 2); g.fill();
-    }
-    g.fillStyle = 'rgba(240,140,140,0.45)';
-    for (const ex of [0.07, 0.35]) {
-      g.beginPath(); g.ellipse(hx + ex * u, hy + 0.15 * u, 0.06 * u, 0.035 * u, 0, 0, Math.PI * 2); g.fill();
-    }
-    S.line(g, [[hx + 0.18 * u, hy + 0.17 * u], [hx + 0.21 * u, hy + 0.195 * u], [hx + 0.24 * u, hy + 0.17 * u]], { stroke: L, lw: u * 0.03, amp: 0 });
-  }
-
-  function makePlayer(u, dpr) {
-    const frames = {
-      idle:  { a: 0.09, b: -0.09, bob: 0 },
-      walk1: { a: 0.2, b: -0.16, bob: -0.03 },
-      walk2: { a: -0.12, b: 0.14, bob: -0.03 },
-      jump:  { a: 0.18, b: -0.12, bob: -0.02, lift: 0.08 },
-    };
-    const out = {};
-    const w = 1.5 * u, h = 2.0 * u, oy = h - 0.04 * u;
-    for (const k in frames) {
-      const cv = mk(w * dpr, h * dpr);
-      const g = cv.getContext('2d');
-      g.scale(dpr, dpr);
-      g.translate(w / 2, oy);
-      drawBody(g, u, frames[k]);
-      out[k] = { cv, w, h, ox: w / 2, oy, bob: frames[k].bob };
-    }
-    return out;
-  }
-
-  // 前側の腕と、手に持っているもの（毎フレーム描く）
-  art.drawArm = function (g, u, ang, bob, held) {
-    g.save();
-    g.translate(0.02 * u, (-0.86 + bob) * u);
-    g.rotate(-ang);
-    if (held) {
-      const it = RS.ITEMS[held.id];
-      const big = it.tool || held.id === 'stick';
-      const sz = u * (big ? 0.78 : 0.5);
-      g.save();
-      g.translate(0, 0.34 * u);
-      g.drawImage(art.icons[held.id], -0.22 * sz, -0.78 * sz, sz, sz);
-      g.restore();
-    }
-    S.rect(g, -0.06 * u, -0.03 * u, 0.12 * u, 0.36 * u, { fill: LOOK.shirt, stroke: COL.line, lw: u * 0.045, r: 0.06 * u, seed: 5, amp: u * 0.01, step: u * 0.1 });
-    S.ellipse(g, 0, 0.36 * u, 0.075 * u, 0.075 * u, { fill: LOOK.skin, stroke: COL.line, lw: u * 0.04, seed: 6, amp: u * 0.006, n: 10 });
-    g.restore();
-  };
-
   // 画面サイズが変わるたびに作り直す
   art.build = function (u, dpr, lineColor) {
     art.T = u; art.dpr = dpr;
@@ -321,7 +249,6 @@
       pts.push([1, 0]);
       art.edges.push(pts);
     }
-    art.player = makePlayer(u, dpr);
     if (!art.icons) art.icons = makeIcons();
   };
 })();
