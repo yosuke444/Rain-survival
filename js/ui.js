@@ -64,12 +64,14 @@
       L.mode = { x: W - 10 - modeW, y: 8 + s + 8, w: modeW, h: modeH };
       L.nameY = 8 + s + 8 + s * 1.5;
       L.pause = { x: W - 10 - pauseW, y: 8 + s + 16 + modeH, w: pauseW, h: modeH };
+      L.photo = { x: L.pause.x - 8 - pauseW, y: L.pause.y, w: pauseW, h: modeH };
     } else {
       L.hotbar = { x: Math.round((W - hbW) / 2), y: H - s - 12, w: hbW, h: s };
       L.bars = { x: 12, y: 12 };
       L.mode = { x: W - 12 - modeW, y: 12, w: modeW, h: modeH };
       L.nameY = H - s - 12 - s * 0.45;
       L.pause = { x: L.mode.x - 8 - pauseW, y: 12, w: pauseW, h: modeH };
+      L.photo = { x: L.pause.x - 8 - pauseW, y: 12, w: pauseW, h: modeH };
     }
     return L;
   };
@@ -78,6 +80,7 @@
     const L = ui.hudLayout(game);
     if (ui.inRect(L.mode, x, y)) return 'mode';
     if (ui.inRect(L.pause, x, y)) return 'pause';
+    if (ui.inRect(L.photo, x, y)) return 'photo';
     if (ui.inRect(L.hotbar, x, y)) return Math.min(8, Math.floor((x - L.hotbar.x) / L.s));
     return null;
   };
@@ -117,6 +120,9 @@
     const pz = L.pause;
     S.rect(g, pz.x, pz.y, pz.w, pz.h, { fill: COL.cream, stroke: COL.line, lw: 2, r: 10, seed: 53, amp: 1.2, step: 14 });
     ui.text(g, 'メニュー' + (game.touch ? '' : ' (Esc)'), pz.x + pz.w / 2, pz.y + pz.h / 2, s * 0.32, { align: 'center', maxW: pz.w - 10 });
+    const ph = L.photo;
+    S.rect(g, ph.x, ph.y, ph.w, ph.h, { fill: COL.cream, stroke: COL.line, lw: 2, r: 10, seed: 55, amp: 1.2, step: 14 });
+    ui.text(g, 'しゃしん' + (game.touch ? '' : ' (Q)'), ph.x + ph.w / 2, ph.y + ph.h / 2, s * 0.32, { align: 'center', maxW: ph.w - 10 });
 
     // 手持ち
     const hb = L.hotbar;

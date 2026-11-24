@@ -119,6 +119,9 @@
       this.time += dt;
       const inp = this.input, p = this.player;
 
+      // 撮影はいつでもできる（UI は写さない）
+      if (inp.pressed('photo')) this.photoReq = true;
+      this.flashT = Math.max(0, (this.flashT || 0) - dt);
       // タイトル・ゲーム中メニュー・設定を開いている間は、ゲームは止める（雨だけ動かす）
       if (this.screens.length) {
         this.updateScreen();
@@ -266,6 +269,7 @@
           const h = RS.ui.hudHit(this, e.x, e.y);
           if (h === 'mode') { this.toggleMode(); inp.markUI(e.id); continue; }
           if (h === 'pause') { if (this.state === 'play') this.openScreen('pause'); inp.markUI(e.id); continue; }
+          if (h === 'photo') { this.photoReq = true; inp.markUI(e.id); continue; }
           if (typeof h === 'number' && (!mouse || this.mode === 'mouse')) {
             this.inv.sel = h; this.showSelName(); inp.markUI(e.id); continue;
           }
@@ -568,10 +572,11 @@
       this.rain.drawNormal(g, this);
       this.drawUmbrella(g);
       this.drawTerrain(g);
-      this.drawTarget(g);
+      if (!this.photoReq) this.drawTarget(g); // 写真には狙いの枠を写さない
       this.drawPlayer(g);
       this.rain.drawAcid(g, this);
       this.drawFx(g);
+      if (this.photoReq) this.takePhoto();
       if (!this.screens.includes('title')) {
         RS.ui.drawHUD(g, this);
         if (this.state === 'menu') RS.ui.drawMenu(g, this);
@@ -580,6 +585,10 @@
         const name = this.screens[this.screens.length - 1];
         if (RS.SCREENS[name].custom) RS.SCREENS[name].draw(g, this);
         else RS.ui.drawScreen(g, this, name);
+      }
+      if (this.flashT > 0) { // 撮影したときの白い光
+        g.fillStyle = `rgba(255,255,255,${(this.flashT / 0.3) * 0.7})`;
+        g.fillRect(0, 0, this.W, this.H);
       }
     }
 
@@ -710,6 +719,14 @@
         r: Tp * 0.2, seed: 401, amp: Tp * 0.03, step: Tp * 0.4,
       });
       g.setLineDash([]);
+    }
+
+    takePhoto() {
+      this.photoReq = false;
+      this.flashT = 0.3;
+      RS.photo.capture(this.canvas)
+        .then(() => this.toast('写真をとりました（アルバムに保存）'))
+        .catch((e) => { console.error(e); this.toast('写真を保存できませんでした'); });
     }
 
     // プレイヤーの今の状態からポーズを決める
