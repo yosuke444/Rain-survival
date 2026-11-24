@@ -6,7 +6,7 @@
   const RS = window.RS;
 
   // ブロックの番号
-  const T = RS.T = { AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, LOG: 4, LEAVES: 5, PLANKS: 6, TABLE: 7, SAPLING: 8 };
+  const T = RS.T = { AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, LOG: 4, LEAVES: 5, PLANKS: 6, TABLE: 7, SAPLING: 8, CHAIR_R: 9, CHAIR_L: 10 };
 
   // solid: ぶつかるか / terrain: 地形として縁取りするか / hard: 素手で掘る秒数
   // tool: 速く掘れる道具 / needTool: その道具がないと掘れない / drop: 掘ると手に入るアイテム
@@ -20,6 +20,9 @@
   RS.TILES[T.PLANKS]  = { name: '板',   solid: true,  terrain: true, hard: 1.0,  tool: 'axe',     drop: 'planks', color: '#e8c08a' };
   RS.TILES[T.TABLE]   = { name: 'クラフトテーブル', solid: false, hard: 1.0, tool: 'axe', drop: 'table', color: '#c89560' };
   RS.TILES[T.SAPLING] = { name: '苗木', solid: false, hard: 0.05, tool: null,      drop: 'sapling', color: '#93c96f' };
+  // いす（右向き・左向き）。座れる
+  RS.TILES[T.CHAIR_R] = { name: '木のいす', solid: false, hard: 1.0, tool: 'axe', drop: 'chair', color: '#c89560', seat: 1 };
+  RS.TILES[T.CHAIR_L] = { name: '木のいす', solid: false, hard: 1.0, tool: 'axe', drop: 'chair', color: '#c89560', seat: -1 };
 
   // アイテム。place: 設置するとなるブロック / food: 食べられる / max: 重ねられる数
   RS.ITEMS = {
@@ -31,6 +34,7 @@
     sapling: { name: '苗木', place: T.SAPLING, needsSoil: true },
     stick:   { name: '棒' },
     apple:   { name: 'りんご', food: true },
+    chair:   { name: '木のいす', place: T.CHAIR_R, chair: true },
   };
 
   // レシピ（材料がそろえば作れる形式。1スロットにつき1個使う）
@@ -52,5 +56,7 @@
       RS.RECIPES.push({ out: id, n: 1, table: true, in: [...Array(a).fill(mat), ...Array(b).fill('stick')] });
     }
   }
+  // いす（クラフトテーブルが必要。仮のレシピ）
+  RS.RECIPES.push({ out: 'chair', n: 1, table: true, in: ['planks', 'planks', 'planks', 'stick'] });
   for (const r of RS.RECIPES) r.key = [...r.in].sort().join('|');
 })();

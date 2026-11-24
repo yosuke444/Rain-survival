@@ -132,6 +132,19 @@
         S.rect(g, 0.6 * u, 0.02 * u, 0.2 * u, 0.1 * u, o({ fill: '#b9b4aa', lw: u * 0.035, r: 0.02 * u }));
         break;
       }
+      case T.CHAIR_L: // 右向きを左右反転
+        g.save(); g.translate(u, 0); g.scale(-1, 1);
+        drawTileArt(g, T.CHAIR_R, u, r);
+        g.restore();
+        break;
+      case T.CHAIR_R: { // 右向き（背もたれが左）
+        const o = (extra) => Object.assign({ stroke: L, lw: u * 0.05, seed: sd(r), amp: u * 0.01, step: u * 0.15 }, extra);
+        S.rect(g, 0.16 * u, 0.04 * u, 0.12 * u, 0.96 * u, o({ fill: COL.plankDark, r: 0.04 * u }));
+        S.rect(g, 0.72 * u, 0.55 * u, 0.1 * u, 0.45 * u, o({ fill: COL.plankDark, r: 0.03 * u }));
+        S.rect(g, 0.12 * u, 0.48 * u, 0.76 * u, 0.12 * u, o({ fill: COL.plank, r: 0.04 * u }));
+        S.line(g, [[0.22 * u, 0.2 * u], [0.22 * u, 0.4 * u]], { stroke: COL.plank, lw: u * 0.05, amp: 0 });
+        break;
+      }
       case T.SAPLING:
         S.line(g, [[0.5 * u, u], [0.47 * u, 0.75 * u], [0.52 * u, 0.5 * u]], { stroke: '#5f8f45', lw: u * 0.07, amp: 0 });
         S.ellipse(g, 0.36 * u, 0.54 * u, 0.14 * u, 0.07 * u, { fill: COL.leaf, stroke: L, lw: u * 0.035, seed: sd(r), amp: u * 0.01 });

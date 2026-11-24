@@ -151,7 +151,10 @@
         // オートモードで Z を押している間の ↑ は「上をねらう」に使う
         jump = inp.down('up') && !(useHeld && this.mode === 'auto');
       }
-      if (this.state !== 'dead') {
+      // いすに座る（↓）・立つ（←→↑）
+      if (playing) this.updateSit(useHeld);
+      if (p.sitting) { move = 0; jump = false; p.vx = 0; p.vy = 0; }
+      if (this.state !== 'dead' && !p.sitting) {
         let rem = dt;
         while (rem > 0) { const h = Math.min(rem, 1 / 60); p.physics(h, this.world, move, jump); rem -= h; }
       }
@@ -458,13 +461,13 @@
       if (td.solid && p.x < x + 1 && p.x + p.w > x && p.y < y + 1 && p.y + p.h > y) return false;
       const below = w.get(x, y + 1);
       if (def.needsSoil && below !== T.GRASS && below !== T.DIRT) return false;
-      if (def.place === T.TABLE && !RS.TILES[below].solid) return false;
+      if ((def.place === T.TABLE || def.chair) && !RS.TILES[below].solid) return false;
       return w.get(x - 1, y) !== T.AIR || w.get(x + 1, y) !== T.AIR || w.get(x, y - 1) !== T.AIR || below !== T.AIR;
     }
 
     placeAt(x, y, id) {
       const def = RS.ITEMS[id];
-      this.world.set(x, y, def.place);
+      this.world.set(x, y, def.chair ? (this.player.face > 0 ? T.CHAIR_R : T.CHAIR_L) : def.place);
       this.inv.consumeHeld(1);
       if (def.place === T.SAPLING) {
         this.world.saplings.push({ x, y, t: C.SAPLING_GROW_MIN + Math.random() * (C.SAPLING_GROW_MAX - C.SAPLING_GROW_MIN) });
@@ -734,11 +737,38 @@
         .catch((e) => { console.error(e); this.toast('写真を保存できませんでした'); });
     }
 
+    // ---------------- いす ----------------
+    updateSit(useHeld) {
+      const inp = this.input, p = this.player, w = this.world;
+      if (p.sitting) {
+        const t = w.get(p.sitting.x, p.sitting.y);
+        if (!RS.TILES[t].seat || inp.pressed('left') || inp.pressed('right') || inp.pressed('up')) p.sitting = null;
+        return;
+      }
+      if (!inp.pressed('down') || useHeld) return;
+      const x = Math.floor(p.cx()), y = Math.floor(p.y + p.h - 0.01);
+      const seat = RS.TILES[w.get(x, y)].seat;
+      if (!seat) return;
+      p.sitting = { x, y };
+      p.face = seat;
+      p.x = x + 0.5 - p.w / 2;
+      p.y = y + 1 - p.h - 0.001;
+      this.toast('すわりました（' + (this.touch ? '◀ ▶ ▲' : '← → ↑') + ' で 立つ）');
+    }
+
     // プレイヤーの今の状態からポーズを決める
     playerPose() {
       const p = this.player, t = this.time;
       const pose = RS.char.pose();
-      if (!p.onGround) {
+      if (p.sitting) {
+        // 座っている：太ももを前に、すねを下に。足は少しぶらぶら
+        const sw = Math.sin(t * 1.6) * 0.12;
+        pose.legF = { a: Math.PI / 2, k: Math.PI / 2 - 0.15 + sw };
+        pose.legB = { a: Math.PI / 2 - 0.1, k: Math.PI / 2 - 0.05 - sw };
+        pose.dy = -0.17;
+        pose.armF = { a: 0.5, e: 0.6 }; pose.armB = { a: 0.4, e: 0.6 };
+        pose.bob = Math.sin(t * 2) * 0.008;
+      } else if (!p.onGround) {
         pose.legF = { a: 0.7, k: 1.0 }; pose.legB = { a: -0.25, k: 0.5 };
         pose.armF = { a: 0.9, e: 0.6 }; pose.armB = { a: 0.7, e: 0.5 };
       } else if (Math.abs(p.vx) > 0.5) {
