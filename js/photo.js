@@ -11,9 +11,11 @@
   function db() {
     if (!dbp) {
       dbp = new Promise((res, rej) => {
-        const r = indexedDB.open('rain-survival', 1);
+        // 版 2：ワールドの保存先（worlds）を追加
+        const r = indexedDB.open('rain-survival', 2);
         r.onupgradeneeded = () => {
           if (!r.result.objectStoreNames.contains('photos')) r.result.createObjectStore('photos', { keyPath: 'id', autoIncrement: true });
+          if (!r.result.objectStoreNames.contains('worlds')) r.result.createObjectStore('worlds', { keyPath: 'id', autoIncrement: true });
         };
         r.onsuccess = () => res(r.result);
         r.onerror = () => rej(r.error);
@@ -21,15 +23,17 @@
     }
     return dbp;
   }
-  function tx(mode, fn) {
+  function tx(mode, fn, store) {
+    store = store || 'photos';
     return db().then((d) => new Promise((res, rej) => {
-      const t = d.transaction('photos', mode);
-      const req = fn(t.objectStore('photos'));
+      const t = d.transaction(store, mode);
+      const req = fn(t.objectStore(store));
       t.oncomplete = () => res(req && req.result);
       t.onerror = () => rej(t.error);
     }));
   }
 
+  RS.dbTx = tx; // ほかの保存（ワールド）でも使う
   PH.add = (blob) => tx('readwrite', (s) => s.add({ blob, time: Date.now(), fav: false }));
   PH.list = () => tx('readonly', (s) => s.getAll()).then((a) => (a || []).sort((x, y) => y.time - x.time));
   PH.put = (rec) => tx('readwrite', (s) => s.put(rec));

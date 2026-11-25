@@ -15,7 +15,8 @@
       title: 'Rain Survival',
       big: true,
       items: (g) => [
-        { label: g.started ? 'つづける' : 'はじめる', act: () => g.startGame() },
+        g.started ? { label: 'つづける', act: () => g.startGame() } : { label: 'あそぶ', act: () => RS.openWorlds(g) },
+        ...(g.started ? [{ label: 'ワールドをえらぶ', act: () => RS.openWorlds(g) }] : []),
         { label: 'キャラメイク', act: () => g.openScreen('charmake') },
         { label: 'アルバム', act: () => RS.openAlbum(g) },
         { label: 'せってい', act: () => g.openScreen('settings') },

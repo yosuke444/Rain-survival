@@ -71,6 +71,7 @@ RS.saveSettings = function (s) {
 };
 
 // ---- 録画 ----
+RS.CONFIG.AUTOSAVE_SEC = 30;        // 自動保存の間隔（秒）
 RS.CONFIG.REC_FPS = 30;              // 録画のコマ数（1秒あたり）
 RS.CONFIG.REC_BITRATE = 2500000;     // 録画の画質（ビットレート）。上げるときれいになるが、ファイルとメモリが増える
 RS.CONFIG.REC_MAX_CHOICES = [30, 60, 120, 0]; // 最大録画時間の選択肢（分。0 = 無制限）

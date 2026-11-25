@@ -23,6 +23,8 @@
     return best;
   }
 
+  RS.ui.navRects = nav;
+
   function state(game) {
     if (!game.album) game.album = { list: null, imgs: new Map(), filter: 'all', page: 0, cursor: 0, view: -1, confirm: 0 };
     return game.album;

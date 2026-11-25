@@ -18,6 +18,7 @@
       this.chunks = new Map();
       this.surfCache = new Map();
       this.saplings = [];
+      this.modified = new Set(); // 掘ったり置いたりして変わったチャンク（保存する）
       this.lk = null; this.lc = null;
       this.theme = RS.THEMES.plains; // この世界の色
       // 傘：中心のマスの真ん中に立つ
@@ -115,7 +116,10 @@
       return c;
     }
     get(x, y) { return this.chunk(x >> 5, y >> 5)[(y & 31) * CS + (x & 31)]; }
-    set(x, y, v) { this.chunk(x >> 5, y >> 5)[(y & 31) * CS + (x & 31)] = v; }
+    set(x, y, v) {
+      this.chunk(x >> 5, y >> 5)[(y & 31) * CS + (x & 31)] = v;
+      this.modified.add((x >> 5) * 65536 + (y >> 5));
+    }
     isSolid(x, y) { return RS.TILES[this.get(x, y)].solid; }
 
     // ---- 傘 ----

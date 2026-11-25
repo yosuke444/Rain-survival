@@ -160,6 +160,13 @@
       g.globalAlpha = 1;
     }
 
+    // 保存したしるし
+    if (game.savedT > 0) {
+      g.globalAlpha = Math.min(1, game.savedT / 0.5);
+      ui.text(g, '保存しました', 12, game.H - 14, s * 0.3, { color: 'rgba(107,74,47,0.85)', outline: COL.cream });
+      g.globalAlpha = 1;
+    }
+
     // お知らせ
     if (game.toastT > 0 && game.toastMsg) {
       g.globalAlpha = Math.min(1, game.toastT / 0.4);

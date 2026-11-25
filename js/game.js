@@ -35,6 +35,12 @@
       addEventListener('resize', () => this.resize());
       this.spawn();
       this.cam.x = this.player.cx(); this.cam.y = this.player.cy() - 2;
+      // ワールドの保存（タイトルの背景のワールドは保存しない）
+      this.worldId = null; this.worldName = ''; this.worldCreated = 0;
+      this.saveT = 0; this.savedT = 0;
+      const saveNow = () => RS.save.saveCurrent(this, true);
+      document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
+      addEventListener('pagehide', saveNow);
       this.last = performance.now();
       requestAnimationFrame((t) => this.frame(t));
     }
@@ -80,6 +86,20 @@
       this.canvas.style.height = H + 'px';
       this.T = Math.round(RS.clamp(Math.min(W / C.VIEW_TILES_W, H / C.VIEW_TILES_H), C.TILE_MIN, C.TILE_MAX));
       RS.art.build(this.T, this.dpr, this.world.theme.line);
+    }
+
+    // 新しいワールドに入れかえる（保存データはそのあとで RS.save.apply が入れる）
+    resetWorld(seed) {
+      this.world = new RS.World(seed);
+      this.player = new RS.Player();
+      this.inv = new RS.Inventory();
+      this.rain = new RS.Rain();
+      this.particles = []; this.floaters = [];
+      this.mine = { key: null, t: 0, need: 1, x: 0, y: 0 };
+      this.target = null; this.state = 'play'; this.exposed = false;
+      this.time = 0; this.saveT = 0;
+      this.spawn();
+      this.cam.x = this.player.cx(); this.cam.y = this.player.cy() - 2;
     }
 
     // 傘の下（中心のすぐ横）で目をさます
@@ -134,10 +154,16 @@
         if (inp.pressed('rec')) { this.recButton(); if (this.pm) return; }
       }
       // タイトル・ゲーム中メニュー・設定を開いている間は、ゲームは止める（雨だけ動かす）
+      this.savedT = Math.max(0, this.savedT - dt);
       if (this.screens.length) {
         this.updateScreen();
         this.rain.update(dt, this.viewRect(), this.world);
         return;
+      }
+      // 自動保存
+      if (this.worldId) {
+        this.saveT += dt;
+        if (this.saveT >= C.AUTOSAVE_SEC) { this.saveT = 0; RS.save.saveCurrent(this); }
       }
       if (inp.pressed('mode')) this.toggleMode();
       if (inp.pressed('esc')) {
@@ -218,6 +244,7 @@
       this.showTouch();
     }
     toTitle() {
+      RS.save.saveCurrent(this);
       this.screens = ['title'];
       this.screenCursor = 0;
       this.showTouch();
