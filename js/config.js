@@ -91,3 +91,12 @@ RS.CONFIG.FFMPEG_CORE_URL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/';
 RS.CONFIG.UMBRELLA_RADII = [24, 32, 42, 54, 68, 84]; // 段階ごとの半径（マス）。最後が max
 RS.CONFIG.UMBRELLA_HEIGHTS = [10, 18, 28, 40, 54, 70]; // 段階ごとの傘のふちの高さ（地面から。マス）。これより上には置けない
 RS.CONFIG.UMBRELLA_DEPTHS = [40, 70, 110, 160, 220, 300]; // 段階ごとの行ける深さ（地面から。マス）。下限には雨雲
+
+// ---- ボス・宝箱（仮） ----
+RS.CONFIG.BOSS_NATURAL_CHANCE = 0.12; // 夜になった瞬間に、おおしずくが自然に出る確率（傘レベル 2 から）
+RS.CONFIG.CHEST_LOOT = [               // 宝箱の中身（どれか 1 つ）
+  [['copper_ingot', 3], ['skyfruit', 2]],
+  [['iron_ore', 4], ['mushroom', 3]],
+  [['cotton', 2], ['berry', 4]],
+  [['crystal', 1], ['apple', 3]],
+];

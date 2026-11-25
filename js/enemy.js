@@ -116,8 +116,9 @@
       e.hurtT = Math.max(0, e.hurtT - dt);
       e.atkCd = Math.max(0, e.atkCd - dt);
       // 朝になったら夜の敵は消える
-      if (e.def.night && !night) { e.gone = true; poof(game, e); continue; }
-      if (Math.hypot(e.cx() - p.cx(), e.cy() - p.cy()) > 44) { e.gone = true; continue; }
+      if (e.def.night && !night && !e.summoned) { e.gone = true; poof(game, e); continue; }
+      if (Math.hypot(e.cx() - p.cx(), e.cy() - p.cy()) > (e.def.boss ? 80 : 44)) { e.gone = true; continue; }
+      if (!(e.def.boss && RS.boss.ai(game, e, dt))) {
       // 動き：近くにいたら追いかける、遠いときはうろうろ
       const dx = p.cx() - e.cx(), dy = p.cy() - e.cy();
       let move = 0;
@@ -131,6 +132,8 @@
       let rem = dt;
       while (rem > 0) { const h = Math.min(rem, 1 / 60); e.physics(h, w, move, jump); rem -= h; }
       if (e.knock) { e.x += e.knock * dt; e.knock *= Math.pow(0.02, dt); if (Math.abs(e.knock) < 0.1) e.knock = 0; if (e.collides(w, e.x, e.y)) e.x -= e.knock * dt; }
+      if (e.bounds) RS.boss.clamp(e); // 建物の中のボスは外に出ない
+      }
       // プレイヤーにぶつかったらダメージ
       if (game.state === 'play') {
         const hit = p.x < e.x + e.w && p.x + p.w > e.x && p.y < e.y + e.h && p.y + p.h > e.y;
@@ -164,7 +167,7 @@
       if (aim) ok = aim.x >= e.x && aim.x <= e.x + e.w && aim.y >= e.y && aim.y <= e.y + e.h && Math.hypot(e.cx() - p.cx(), e.cy() - p.cy()) <= C.MOUSE_REACH + 0.5;
       else {
         const dx = (e.cx() - p.cx()) * p.face;
-        ok = dx > -0.3 && dx < C.ATTACK_REACH + e.w / 2 && Math.abs(e.cy() - p.cy()) < 1.4;
+        ok = dx > -0.3 - e.w / 2 && dx < C.ATTACK_REACH + e.w / 2 && Math.abs(e.cy() - p.cy()) < 1.4 + e.h / 2;
       }
       const d = Math.hypot(e.cx() - p.cx(), e.cy() - p.cy());
       if (ok && d < bd) { bd = d; best = e; }
@@ -179,7 +182,7 @@
     if (e.hp <= 0) {
       e.gone = true;
       poof(game, e);
-      RS.prog.addCP(game, 1, 'たおした');
+      if (e.def.boss) RS.boss.defeated(game, e); else RS.prog.addCP(game, 1, 'たおした');
       let off = 0;
       for (const [id, n, ch] of e.def.drops) {
         if (Math.random() > ch) continue;
@@ -201,7 +204,8 @@
       if (e.hurtT > 0 && Math.floor(e.hurtT * 20) % 2) g.globalAlpha = 0.5;
       const w = e.w * Tp, h = e.h * Tp;
       const o = (seed, fill) => ({ fill, stroke: COL.line, lw: Math.max(1.5, Tp * 0.06), seed, amp: Tp * 0.02, step: Tp * 0.2 });
-      if (e.type === 'shizukun') {
+      if (e.def.boss) RS.boss.draw(g, e, Tp, w, h, o);
+      else if (e.type === 'shizukun') {
         S.shape(g, [[0, -h], [w * 0.35, -h * 0.45], [w * 0.5, -h * 0.15], [w * 0.3, 0], [-w * 0.3, 0], [-w * 0.5, -h * 0.15], [-w * 0.35, -h * 0.45]], o(1101, e.def.color));
         g.fillStyle = 'rgba(255,255,255,0.6)'; g.beginPath(); g.ellipse(-w * 0.18, -h * 0.55, w * 0.07, h * 0.12, -0.3, 0, Math.PI * 2); g.fill();
       } else if (e.type === 'fuwakko') {
@@ -216,7 +220,7 @@
       for (const ex of [0.08, 0.26]) { g.beginPath(); g.ellipse(w * ex, -h * 0.38, Tp * 0.045, Tp * 0.07, 0, 0, Math.PI * 2); g.fill(); }
       g.restore();
       // 体力（けがをしているときだけ）
-      if (e.hp < e.def.hp) {
+      if (e.hp < e.def.hp && !e.def.boss) {
         const bw = Tp * 0.8, bx = x - bw / 2, by = oy + e.y * Tp - Tp * 0.25;
         g.fillStyle = 'rgba(255,246,230,0.9)'; g.fillRect(bx, by, bw, Tp * 0.1);
         g.fillStyle = '#e58c6c'; g.fillRect(bx, by, bw * Math.max(0, e.hp / e.def.hp), Tp * 0.1);

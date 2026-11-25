@@ -40,6 +40,7 @@
       this.effects = []; this.eating = null; // 特殊効果・食事中
       this.clock = C.DAY_SEC * 0.1; this.atkCd = 0; RS.enemy.reset(this); // 時刻・敵
       RS.prog.reset(this); // 傘の成長
+      RS.boss.reset(this); // ダンジョンの状態
       this.saveT = 0; this.savedT = 0;
       const saveNow = () => RS.save.saveCurrent(this, true);
       document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
@@ -104,6 +105,7 @@
       this.effects = []; this.eating = null;
       this.clock = C.DAY_SEC * 0.1; this.atkCd = 0; RS.enemy.reset(this);
       RS.prog.reset(this);
+      RS.boss.reset(this);
       this.spawn();
       this.cam.x = this.player.cx(); this.cam.y = this.player.cy() - 2;
     }
@@ -207,6 +209,7 @@
       this.atkCd = Math.max(0, this.atkCd - dt);
       RS.enemy.update(this, dt);
       RS.prog.update(this, dt);
+      RS.boss.natural(this);
       const um = this.world.umb; um.dispR += (um.R - um.dispR) * Math.min(1, dt * 1.2); // 傘が広がるようす
       p.swingT = Math.max(0, p.swingT - dt);
 
@@ -497,6 +500,7 @@
       }
       if (def && def.food) { this.mine.key = null; if (usePressed) { RS.meal.start(this); this.mineLock = true; } return; }
       if (def && def.fillWater) { this.mine.key = null; if (usePressed) this.fillWater(); return; }
+      if (def && def.summon) { this.mine.key = null; if (usePressed) RS.boss.useSummon(this, def); return; }
 
       if (def && def.place != null) {
         this.mine.key = null;
@@ -516,6 +520,12 @@
       if (this.mineLock) return;
       if (!t || !t.valid) { this.mine.key = null; if (usePressed) this.explain(t, false); return; }
       const tile = this.world.get(t.x, t.y);
+      // 遺跡の扉・ボスの祭壇・宝箱は「しらべる」
+      if (tile === T.DDOOR || tile === T.BOSS_ALTAR || tile === T.CHEST) {
+        this.mine.key = null;
+        if (usePressed) RS.boss.interact(this, t.x, t.y, tile);
+        return;
+      }
       // 傘の台座・ドアは「しらべる」
       if (tile === T.ALTAR || tile === T.DOOR) {
         this.mine.key = null;
@@ -563,6 +573,8 @@
     mineInfo(tile, def) {
       const td = RS.TILES[tile];
       const right = !!(def && def.tool && def.tool === td.tool);
+      if (td.unbreakable) return { ok: false, msg: td.name + 'は こわせません' };
+      if (td.dungeon && !this.dungeons[td.dungeon].cleared) return { ok: false, msg: 'ボスをたおすまで、' + td.name + 'は こわせません' };
       if (td.needTool && !right) return { ok: false, msg: td.name + 'を ほるには ツルハシが ひつよう' };
       if (td.needTier && def.tier < td.needTier) return { ok: false, msg: td.name + 'を ほるには ' + ['', '木', '石', '銅', '鉄'][td.needTier] + 'のツルハシ以上が ひつよう' };
       const mult = (right ? C.TOOL_MULT[def.tier] : 1) * RS.meal.mult(this, 'mine');
@@ -729,6 +741,7 @@
       if (!this.screens.includes('title')) {
         this.drawAltarHint(g);
         RS.ui.drawHUD(g, this);
+        RS.boss.drawBar(g, this);
         if (this.state === 'menu') RS.ui.drawMenu(g, this);
       }
       if (this.screens.length) {

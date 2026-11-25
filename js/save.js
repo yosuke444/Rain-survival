@@ -30,6 +30,7 @@
       clock: game.clock,
       umbLevel: game.world.umb.level,
       prog: game.prog,
+      dungeons: game.dungeons,
     };
   };
 
@@ -62,6 +63,7 @@
     game.effects = (d.effects || []).filter((e) => RS.EFFECTS[e.id]);
     if (d.clock != null) game.clock = d.clock;
     if (d.umbLevel) { w.setUmbrella(d.umbLevel); w.umb.dispR = w.umb.R; }
+    if (d.dungeons) game.dungeons = Object.assign(game.dungeons, d.dungeons);
     if (d.prog) game.prog = Object.assign({ cp: 0, delivered: {}, seen: {}, dishes: {}, cleared: false }, d.prog);
     if (p.collides(w, p.x, p.y)) game.spawn();
     game.cam.x = p.cx(); game.cam.y = p.cy() - 2;

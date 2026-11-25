@@ -8,7 +8,8 @@
   // ブロックの番号
   const T = RS.T = { AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, LOG: 4, LEAVES: 5, PLANKS: 6, TABLE: 7, SAPLING: 8, CHAIR_R: 9, CHAIR_L: 10,
     CAMPFIRE: 11, BOARD: 12, POT: 13, PAN: 14, MUSHROOM: 15,
-    COPPER: 16, IRON: 17, CRYSTAL: 18, FURNACE: 19, ALTAR: 20, DOOR: 21, SKYORE: 22, SKYGRASS: 23 };
+    COPPER: 16, IRON: 17, CRYSTAL: 18, FURNACE: 19, ALTAR: 20, DOOR: 21, SKYORE: 22, SKYGRASS: 23,
+    RUIN_BRICK: 24, SKY_BRICK: 25, DDOOR: 26, BOSS_ALTAR: 27, CHEST: 28, CHEST_OPEN: 29 };
 
   // solid: ぶつかるか / terrain: 地形として縁取りするか / hard: 素手で掘る秒数
   // tool: 速く掘れる道具 / needTool: その道具がないと掘れない / drop: 掘ると手に入るアイテム
@@ -39,6 +40,13 @@
   // 空島（そらいし：空島だけの鉱石、空島の草：そらのみ が見つかる）
   RS.TILES[T.SKYORE] = { name: 'そらいし', solid: true, terrain: true, hard: 2.2, tool: 'pickaxe', needTool: true, needTier: 2, drop: 'skystone', color: '#c9b8f0', ore: 5 };
   RS.TILES[T.SKYGRASS] = { name: '空の草', solid: true, terrain: true, hard: 0.6, tool: 'shovel', drop: 'dirt', color: '#bfe8c8' };
+  // ダンジョン（dungeon：どのダンジョンの物か。ボスをたおすまでこわせない）
+  RS.TILES[T.RUIN_BRICK] = { name: '遺跡のレンガ', solid: true, terrain: true, hard: 2.5, tool: 'pickaxe', drop: 'stone', color: '#8f8577', dungeon: 'ruin' };
+  RS.TILES[T.SKY_BRICK] = { name: 'ほこらの石', solid: true, terrain: true, hard: 2.5, tool: 'pickaxe', drop: 'skystone', color: '#d9cff2', dungeon: 'sky' };
+  RS.TILES[T.DDOOR] = { name: '遺跡の扉', solid: true, hard: Infinity, color: '#6b5a48', unbreakable: true };
+  RS.TILES[T.BOSS_ALTAR] = { name: 'ボスの祭壇', solid: false, hard: Infinity, color: '#b5543f', unbreakable: true };
+  RS.TILES[T.CHEST] = { name: '宝箱', solid: false, hard: Infinity, color: '#c89560', unbreakable: true };
+  RS.TILES[T.CHEST_OPEN] = { name: 'あいた宝箱', solid: false, hard: 1.0, tool: 'axe', drop: 'planks', color: '#c89560' };
   RS.TILES[T.FURNACE] = { name: 'かまど', solid: false, hard: 1.4, tool: 'pickaxe', drop: 'furnace', color: '#9a9aa6', utensil: true };
   // 傘の台座（こわせない）。近くで X を押すと傘の画面
   RS.TILES[T.ALTAR] = { name: '傘の台座', solid: false, hard: Infinity, tool: null, drop: null, color: '#f4ead8', unbreakable: true };
@@ -75,6 +83,11 @@
     copper_ingot:  { name: '銅のインゴット' },
     skystone:      { name: 'そらいし' },
     cotton:        { name: 'ふわふわわた' },
+    // ボス
+    bell:          { name: 'しずくの鈴', summon: 'oshizuku' },
+    bigdrop:       { name: 'おおしずくのしずく' },
+    rockheart:     { name: 'いわドンのかけら' },
+    whale:         { name: 'くもくじらのひげ' },
     skyfruit:      { name: 'そらのみ', food: { kind: 'eat', amount: 12, motion: 'bite', dur: 5, look: { main: '#c9b8f0' } } },
     iron_ingot:    { name: '鉄のインゴット' },
     furnace:       { name: 'かまど', place: T.FURNACE },
@@ -109,6 +122,7 @@
   RS.RECIPES.push({ out: 'cup', n: 2, table: true, in: ['planks', 'stick'] });
   RS.RECIPES.push({ out: 'pot', n: 1, table: true, in: ['stone', 'stone', 'stone', 'stone'] });
   RS.RECIPES.push({ out: 'pan', n: 1, table: true, in: ['stone', 'stone', 'planks'] });
+  RS.RECIPES.push({ out: 'bell', n: 1, table: true, in: ['jelly', 'jelly', 'jelly', 'copper_ingot'] });
   RS.RECIPES.push({ out: 'furnace', n: 1, table: true, in: ['stone', 'stone', 'stone', 'log'] });
   for (const r of RS.RECIPES) r.key = [...r.in].sort().join('|');
 })();

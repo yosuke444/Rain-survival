@@ -28,6 +28,45 @@
       // 傘の台座（柱のすぐ右）
       const ax = 1, ay = this.surface(1) - 1;
       this.chunk(ax >> 5, ay >> 5)[(ay & 31) * CS + (ax & 31)] = T.ALTAR;
+      this.buildStructures();
+    }
+
+    // 生成のときに置く（保存の対象にしない）
+    put(x, y, t) { this.chunk(x >> 5, y >> 5)[(y & 31) * CS + (x & 31)] = t; }
+
+    // ダンジョン・建物（決まった場所）
+    buildStructures() {
+      const s0 = this.surface(0);
+      this.dun = {};
+      // ① 地下の遺跡（ボス：いわドン）。入り口の扉に「銅のツルハシ」を納める
+      const rx = 8, ry = s0 + 22;
+      for (let ly = 0; ly <= 12; ly++) for (let lx = 0; lx <= 22; lx++) this.put(rx + lx, ry + ly, T.RUIN_BRICK);
+      for (let ly = 1; ly <= 3; ly++) for (let lx = 1; lx <= 21; lx++) this.put(rx + lx, ry + ly, T.AIR); // 上の通路
+      for (let ly = 4; ly <= 5; ly++) for (let lx = 17; lx <= 19; lx++) this.put(rx + lx, ry + ly, T.AIR); // 下へのあな
+      for (let ly = 6; ly <= 11; ly++) for (let lx = 8; lx <= 21; lx++) this.put(rx + lx, ry + ly, T.AIR); // ボスの部屋
+      this.put(rx, ry + 2, T.DDOOR); this.put(rx, ry + 3, T.DDOOR);
+      this.put(rx + 9, ry + 11, T.BOSS_ALTAR);
+      this.put(rx, s0 - 1 + (this.surface(rx) - s0), T.RUIN_BRICK); // 地上の目じるし
+      this.put(rx, this.surface(rx) - 2, T.RUIN_BRICK);
+      this.dun.ruin = { door: [rx, ry + 2], altar: [rx + 9, ry + 11], key: 'copper_pickaxe', boss: 'iwadon',
+        bounds: { x0: rx + 8, x1: rx + 22, y0: ry + 6, y1: ry + 12 } };
+      // ② 空のほこら（ボス：くもくじら）。いちばんはじめの空島の上
+      const I = this.islands()[0];
+      for (const dx of [-3, 3]) this.put(I.x + dx, I.y - 3, T.SKY_BRICK); // アーチ（下はくぐれる）
+      for (let dx = -3; dx <= 3; dx++) this.put(I.x + dx, I.y - 4, T.SKY_BRICK);
+      this.put(I.x, I.y - 1, T.BOSS_ALTAR);
+      this.dun.sky = { altar: [I.x, I.y - 1], boss: 'kujira', bounds: { x0: I.x - 14, x1: I.x + 15, y0: I.y - 16, y1: I.y } };
+      // ③ 古い倉庫（ボスなし）。宝箱が 2 つ
+      const wx = -40, base = this.surface(-37);
+      for (let x = wx; x <= wx + 6; x++) {
+        for (let y = base; y <= this.surface(x) + 1; y++) this.put(x, y, T.DIRT); // 土台
+        for (let y = base - 5; y < base; y++) this.put(x, y, T.AIR);
+        this.put(x, base, T.PLANKS);
+        this.put(x, base - 5, T.PLANKS);
+      }
+      for (let y = base - 4; y < base; y++) { this.put(wx, y, T.PLANKS); this.put(wx + 6, y, T.PLANKS); }
+      this.put(wx + 6, base - 1, T.AIR); this.put(wx + 6, base - 2, T.AIR); // 入り口
+      this.put(wx + 2, base - 1, T.CHEST); this.put(wx + 4, base - 1, T.CHEST);
     }
 
     // ---- ノイズ ----
@@ -89,12 +128,19 @@
       if (this._isl) return this._isl;
       const r = RS.rng(this.seed * 7 + 13), list = [];
       const s0 = this.surface(0);
+      // 空のほこらの島（高め・左。傘レベル 5 で届く）
+      list.push({ x: -34, y: s0 - 47, w: 9, d: 4, seed: 99 });
       for (let i = 0; i < 12; i++) {
-        // はじめの 3 つは低め・近め（傘レベル 2〜3 で届く）
-        let x = Math.round((r() * 2 - 1) * (i < 3 ? 26 : 80));
-        if (Math.abs(x) < 7) x += x < 0 ? -8 : 8;
-        const hgt = i < 3 ? 13 + i * 4 + Math.floor(r() * 3) : 14 + Math.floor(r() * 52);
-        list.push({ x, y: s0 - hgt, w: 5 + Math.floor(r() * 5), d: 3 + Math.floor(r() * 3), seed: i });
+        // はじめの 3 つは低め・近め（傘レベル 2〜3 で届く）。ほかの島と重ならないようにする
+        for (let tries = 0; tries < 12; tries++) {
+          let x = Math.round((r() * 2 - 1) * (i < 3 ? 26 : 80));
+          if (Math.abs(x) < 7) x += x < 0 ? -8 : 8;
+          const hgt = i < 3 ? 13 + i * 4 + Math.floor(r() * 3) : 14 + Math.floor(r() * 52);
+          const I = { x, y: s0 - hgt, w: 5 + Math.floor(r() * 5), d: 3 + Math.floor(r() * 3), seed: i };
+          if (list.some((J) => Math.abs(I.x - J.x) < I.w + J.w + 3 && Math.abs(I.y - J.y) < I.d + J.d + 7)) continue;
+          list.push(I);
+          break;
+        }
       }
       return (this._isl = list);
     }

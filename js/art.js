@@ -234,6 +234,36 @@
         S.ellipse(g, 0.7 * u, 0.62 * u, 0.05 * u, 0.05 * u, o({ fill: '#f7d978', n: 8, lw: u * 0.03 }));
         break;
       }
+      case T.RUIN_BRICK: case T.SKY_BRICK: {
+        g.fillStyle = type === T.RUIN_BRICK ? '#8f8577' : '#d9cff2'; g.fillRect(0, 0, u, u);
+        const dk = type === T.RUIN_BRICK ? '#6b6258' : '#a89cc8';
+        for (const y of [u / 2]) S.line(g, [[0, y], [u, y]], { stroke: dk, lw: u * 0.04, seed: sd(r), amp: u * 0.01, step: u * 0.3 });
+        S.line(g, [[u * 0.5, 0], [u * 0.5, u / 2]], { stroke: dk, lw: u * 0.04, amp: 0 });
+        S.line(g, [[u * 0.2, u / 2], [u * 0.2, u]], { stroke: dk, lw: u * 0.04, amp: 0 });
+        S.line(g, [[u * 0.8, u / 2], [u * 0.8, u]], { stroke: dk, lw: u * 0.04, amp: 0 });
+        break;
+      }
+      case T.DDOOR: {
+        const o = (extra) => Object.assign({ stroke: L, lw: u * 0.05, seed: sd(r), amp: u * 0.01, step: u * 0.15 }, extra);
+        S.rect(g, 0.05 * u, 0, 0.9 * u, u, o({ fill: '#6b5a48', r: 0.06 * u }));
+        S.ellipse(g, 0.5 * u, 0.5 * u, 0.14 * u, 0.14 * u, o({ fill: '#f3b65b', n: 8 }));
+        break;
+      }
+      case T.BOSS_ALTAR: {
+        const o = (extra) => Object.assign({ stroke: L, lw: u * 0.05, seed: sd(r), amp: u * 0.01, step: u * 0.15 }, extra);
+        S.rect(g, 0.1 * u, 0.55 * u, 0.8 * u, 0.45 * u, o({ fill: '#8f8577', r: 0.06 * u }));
+        S.shape(g, [[0.5 * u, 0.1 * u], [0.68 * u, 0.32 * u], [0.5 * u, 0.52 * u], [0.32 * u, 0.32 * u]], o({ fill: '#d9564f', lw: u * 0.035 }));
+        break;
+      }
+      case T.CHEST: case T.CHEST_OPEN: {
+        const o = (extra) => Object.assign({ stroke: L, lw: u * 0.05, seed: sd(r), amp: u * 0.01, step: u * 0.15 }, extra);
+        S.rect(g, 0.1 * u, 0.45 * u, 0.8 * u, 0.55 * u, o({ fill: '#c89560', r: 0.06 * u }));
+        if (type === T.CHEST) {
+          S.rect(g, 0.1 * u, 0.25 * u, 0.8 * u, 0.25 * u, o({ fill: '#d9a86c', r: 0.1 * u }));
+          S.rect(g, 0.44 * u, 0.4 * u, 0.12 * u, 0.16 * u, o({ fill: '#f7d978', r: 0.02 * u, lw: u * 0.03 }));
+        } else S.rect(g, 0.1 * u, 0.12 * u, 0.8 * u, 0.12 * u, o({ fill: '#d9a86c', r: 0.04 * u }));
+        break;
+      }
       case T.SAPLING:
         S.line(g, [[0.5 * u, u], [0.47 * u, 0.75 * u], [0.52 * u, 0.5 * u]], { stroke: '#5f8f45', lw: u * 0.07, amp: 0 });
         S.ellipse(g, 0.36 * u, 0.54 * u, 0.14 * u, 0.07 * u, { fill: COL.leaf, stroke: L, lw: u * 0.035, seed: sd(r), amp: u * 0.01 });
@@ -308,7 +338,27 @@
       S.ellipse(g, 32, 32, 20, 17, { stroke: L, lw: 3, seed: t, amp: 0.8, n: 12 });
       return;
     }
-    if (id === 'skystone') {
+    if (id === 'bell') {
+      S.shape(g, [[20, 44], [22, 26], [32, 16], [42, 26], [44, 44]], { fill: '#8fc4ea', stroke: L, lw: 3, seed: 91, amp: 0.6, step: 8 });
+      S.ellipse(g, 32, 48, 5, 5, { fill: '#f7d978', stroke: L, lw: 2, seed: 92, amp: 0.4 });
+      S.line(g, [[32, 16], [32, 9]], { stroke: L, lw: 3, amp: 0 });
+      return;
+    }
+    if (id === 'bigdrop') {
+      S.shape(g, [[32, 10], [44, 32], [42, 48], [22, 48], [20, 32]], { fill: '#7fb7e6', stroke: L, lw: 3, seed: 93, amp: 0.6, step: 8 });
+      S.shape(g, [[26, 12], [29, 6], [32, 11], [35, 6], [38, 12]], { fill: '#f7d978', stroke: L, lw: 2, seed: 94, amp: 0.3 });
+      return;
+    }
+    if (id === 'rockheart') {
+      S.shape(g, [[18, 44], [16, 26], [30, 14], [46, 22], [48, 42], [34, 50]], { fill: '#a39a8c', stroke: L, lw: 3, seed: 95, amp: 0.8, step: 8 });
+      S.shape(g, [[28, 30], [34, 24], [40, 30], [34, 38]], { fill: '#f3a35b', stroke: L, lw: 2, seed: 96, amp: 0.3 });
+      return;
+    }
+    if (id === 'whale') {
+      S.shape(g, [[14, 40], [26, 24], [40, 18], [52, 22], [44, 30], [30, 40]], { fill: '#eef3fb', stroke: L, lw: 3, seed: 97, amp: 0.6, step: 8 });
+      return;
+    }
+        if (id === 'skystone') {
       g.save(); g.translate(12, 12); g.beginPath(); S.trace(g, S.ellipsePts(20, 20, 20, 17, 12), true); g.clip();
       drawTileArt(g, T.SKYORE, 40, RS.rng(77)); g.restore();
       S.ellipse(g, 32, 32, 20, 17, { stroke: L, lw: 3, seed: 78, amp: 0.8, n: 12 });

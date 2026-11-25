@@ -19,8 +19,8 @@
     { cp: 30, items: [item('table'), item('wood_pickaxe'), item('apple')] },
     { cp: 90, items: [item('stone_pickaxe'), item('pot'), dishEnds('ジュース', 'ジュース（どれでも）')] },
     { cp: 170, items: [item('copper_pickaxe'), item('chair'), dishEnds('スープ', 'スープ（どれでも）'), item('skystone')] },
-    { cp: 280, items: [item('iron_pickaxe'), item('jelly'), item('pan'), item('cotton')] },
-    { cp: 420, items: [item('crystal'), item('iron_sword'), dishEnds('いため', 'いため（どれでも）')] },
+    { cp: 280, items: [item('iron_pickaxe'), item('bigdrop'), item('pan'), item('cotton')] },
+    { cp: 420, items: [item('crystal'), item('iron_sword'), dishEnds('いため', 'いため（どれでも）'), item('rockheart'), item('whale')] },
   ];
   PG.MAX = C.UMBRELLA_RADII.length;
   const labelOf = (r) => r.label || RS.ITEMS[r.id].name;
