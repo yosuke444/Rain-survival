@@ -64,7 +64,7 @@ RS.CONFIG = {
 
 // ---- 設定の保存（ブラウザ内。消えても初期値で動く） ----
 RS.loadSettings = function () {
-  const d = { mode: 'auto', recMax: 60 }; // recMax: 最大録画時間（分。0 = 無制限）。初期は1時間
+  const d = { mode: 'auto', recMax: 60, volBgm: 50, volAmb: 60 }; // volBgm / volAmb：BGM・環境音の音量（0〜100） // recMax: 最大録画時間（分。0 = 無制限）。初期は1時間
   try { Object.assign(d, JSON.parse(localStorage.getItem('rs.settings') || '{}')); } catch (_) { /* 初期値のまま */ }
   return d;
 };

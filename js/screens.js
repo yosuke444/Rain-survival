@@ -36,6 +36,8 @@
       title: 'せってい',
       items: (g) => [
         { label: '採掘・設置のモード：' + (g.mode === 'auto' ? 'オート' : 'マウス'), act: () => g.toggleMode() },
+        { label: 'BGM の音量：' + g.settings.volBgm, act: () => { g.settings.volBgm = (g.settings.volBgm + 25) % 125; RS.saveSettings(g.settings); RS.sound.setVolume(g.settings); } },
+        { label: '環境音（雨・自然）の音量：' + g.settings.volAmb, act: () => { g.settings.volAmb = (g.settings.volAmb + 20) % 120; RS.saveSettings(g.settings); RS.sound.setVolume(g.settings); } },
         { label: '最大録画時間：' + recLabel(g.settings.recMax), act: () => {
           const ch = RS.CONFIG.REC_MAX_CHOICES;
           g.settings.recMax = ch[(ch.indexOf(g.settings.recMax) + 1) % ch.length];

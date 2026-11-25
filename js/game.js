@@ -46,6 +46,7 @@
       const saveNow = () => RS.save.saveCurrent(this, true);
       document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
       addEventListener('pagehide', saveNow);
+      RS.sound.hook(this); // 最初の操作で音を鳴らし始める
       this.last = performance.now();
       requestAnimationFrame((t) => this.frame(t));
     }
@@ -142,6 +143,7 @@
       this.last = now;
       try {
         this.update(dt);
+        RS.sound.update(this, dt);
         this.render();
       } catch (e) {
         console.error(e);
