@@ -43,7 +43,7 @@
   ui.drawStack = function (g, x, y, s, stack, alpha) {
     const pad = s * 0.17;
     if (alpha != null) g.globalAlpha = alpha;
-    g.drawImage(RS.art.icons[stack.id], x + pad, y + pad, s - 2 * pad, s - 2 * pad);
+    g.drawImage(RS.iconOf(stack), x + pad, y + pad, s - 2 * pad, s - 2 * pad);
     g.globalAlpha = 1;
     if (stack.n > 1) ui.text(g, String(stack.n), x + s * 0.86, y + s * 0.76, s * 0.34, { align: 'right', outline: COL.cream });
   };
@@ -169,7 +169,7 @@
     const held = inv.held();
     if (game.selNameT > 0 && held) {
       g.globalAlpha = Math.min(1, game.selNameT / 0.4);
-      ui.text(g, RS.ITEMS[held.id].name, game.W / 2, L.nameY, s * 0.38, { align: 'center', outline: COL.cream });
+      ui.text(g, RS.itemName(held), game.W / 2, L.nameY, s * 0.38, { align: 'center', outline: COL.cream });
       g.globalAlpha = 1;
     }
 
@@ -205,8 +205,10 @@
   ui.menuLayout = function (game) {
     const W = game.W, H = game.H, size = game.menu.size;
     const key = W + 'x' + H + ':' + size;
+    const rows = typeof size === 'number' ? size : 1; // 調理器具は1列（3つの枠）
+    const cols = typeof size === 'number' ? size : 3;
     if (ui._ml && ui._ml.key === key) return ui._ml;
-    const rowsH = 0.8 + size + 0.5 + 3 + 0.3 + 1 + 0.9 + 0.5;
+    const rowsH = 0.8 + Math.max(rows, 2) + 0.5 + 3 + 0.3 + 1 + 0.9 + 0.5;
     const s = Math.floor(RS.clamp(Math.min((W - 20) / 9.8, (H - 16) / rowsH), 24, 58));
     const pw = 9.8 * s, ph = rowsH * s;
     const px = Math.round((W - pw) / 2), py = Math.round((H - ph) / 2);
@@ -214,17 +216,18 @@
     const left = px + 0.4 * s;
 
     // クラフト枠
-    const cw = size * s + 1.3 * s + s;
+    const cw = cols * s + 1.3 * s + s;
     const cx = px + (pw - cw) / 2, cy = py + 0.8 * s;
-    for (const i of RS.Inventory.GRID[size]) {
+    for (const i of RS.Inventory.gridOf(size)) {
       L.slots.push({ ref: { k: 'craft', i }, x: cx + (i % 3) * s, y: cy + Math.floor(i / 3) * s, s });
     }
-    const rx = cx + size * s + 1.3 * s, ry = cy + (size * s - s) / 2;
+    const rx = cx + cols * s + 1.3 * s, ry = cy + (rows * s - s) / 2;
     L.slots.push({ ref: { k: 'result' }, x: rx, y: ry, s });
-    L.arrow = { x0: cx + size * s + 0.2 * s, x1: rx - 0.2 * s, y: ry + s / 2 };
+    L.arrow = { x0: cx + cols * s + 0.2 * s, x1: rx - 0.2 * s, y: ry + s / 2 };
+    L.hintY = cy + rows * s + s * 0.35; // 調理器具：作れるもののヒント
 
     // インベントリ 9x3
-    const iy = cy + size * s + 0.5 * s;
+    const iy = cy + Math.max(rows, 2) * s + 0.5 * s;
     L.invY = iy;
     for (let i = 9; i < 36; i++) {
       L.slots.push({ ref: { k: 'inv', i }, x: left + ((i - 9) % 9) * s, y: iy + Math.floor((i - 9) / 9) * s, s });
@@ -234,7 +237,7 @@
     L.hotY = hy;
     for (let i = 0; i < 9; i++) L.slots.push({ ref: { k: 'inv', i }, x: left + i * s, y: hy, s });
 
-    L.hintY = hy + s + 0.5 * s;
+    L.helpY = hy + s + 0.5 * s;
     L.close = { x: px + pw - 0.95 * s, y: py + 0.15 * s, w: 0.8 * s, h: 0.8 * s };
     ui._ml = L;
     return L;
@@ -272,7 +275,9 @@
     S.rect(g, P.x, P.y, P.w, P.h, { fill: COL.cream, stroke: COL.line, lw: 3, r: s * 0.4, seed: 31, amp: 2, step: 30 });
 
     // タイトル
-    ui.text(g, L.size === 3 ? 'クラフトテーブル' : 'もちもの', P.x + 0.45 * s, P.y + 0.45 * s, s * 0.42);
+    const ut = typeof L.size === 'string' ? RS.UTENSILS[Number(L.size.slice(2))] : null;
+    ui.text(g, ut ? ut.name + (ut.tier >= 2 ? '（手の込んだ料理）' : '') : L.size === 3 ? 'クラフトテーブル' : 'もちもの', P.x + 0.45 * s, P.y + 0.45 * s, s * 0.42, { maxW: P.w * 0.5 });
+    if (ut) ui.text(g, '作れるもの：' + RS.cook.hints(ut.id).join(' ／ '), P.x + P.w / 2, L.hintY, s * 0.27, { align: 'center', maxW: P.w - s * 0.6, color: 'rgba(107,74,47,0.85)' });
 
     // とじるボタン
     const c = L.close;
@@ -291,7 +296,7 @@
     const kbd = game.mode === 'auto';
     L.slots.forEach((sl, i) => {
       let stack = null, alpha = null;
-      if (sl.ref.k === 'result') { if (recipe) { stack = { id: recipe.out, n: recipe.n }; } }
+      if (sl.ref.k === 'result') { if (recipe) { stack = { id: recipe.out, n: recipe.n, data: recipe.data }; } }
       else stack = inv.get(sl.ref);
       const sel = sl.ref.k === 'inv' && sl.ref.i === inv.sel;
       ui.drawSlot(g, sl.x, sl.y, s, stack, { sel, hl: kbd && i === game.menu.cursor, seed: 100 + i, alpha });
@@ -304,8 +309,8 @@
     else if (game.menu.lastPtr) focus = ui.slotAt(L, game.menu.lastPtr.x, game.menu.lastPtr.y);
     const fs = L.slots[focus];
     if (fs) {
-      let st = fs.ref.k === 'result' ? (recipe ? { id: recipe.out } : null) : inv.get(fs.ref);
-      if (st) ui.text(g, RS.ITEMS[st.id].name, P.x + P.w - 1.2 * s, P.y + 0.45 * s, s * 0.34, { align: 'right', maxW: P.w * 0.45 });
+      const st = fs.ref.k === 'result' ? (recipe ? { id: recipe.out, data: recipe.data } : null) : inv.get(fs.ref);
+      if (st) ui.text(g, RS.itemName(st), P.x + P.w - 1.2 * s, P.y + 0.45 * s, s * 0.34, { align: 'right', maxW: P.w * 0.45 });
     }
 
     // 操作の説明
@@ -313,7 +318,7 @@
     if (game.touch) hint = 'タップ：もつ・おく　長おし：1こだけ おく / 半分もつ';
     else if (kbd) hint = '矢印/WASD：えらぶ　Z：もつ・おく　C：1こ おく　X：とじる';
     else hint = 'クリック：もつ・おく　右クリック：1こ おく / 半分もつ　X：とじる';
-    ui.text(g, hint, P.x + P.w / 2, L.hintY, s * 0.3, { align: 'center', maxW: P.w - s * 0.6, color: 'rgba(107,74,47,0.85)' });
+    ui.text(g, hint, P.x + P.w / 2, L.helpY, s * 0.3, { align: 'center', maxW: P.w - s * 0.6, color: 'rgba(107,74,47,0.85)' });
 
     // つかんでいるアイテム
     if (inv.cursor) {

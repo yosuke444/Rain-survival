@@ -97,7 +97,11 @@
       if (y === s) return T.GRASS;
       const depth = y - s;
       const minCave = Math.abs(x) < C.UMBRELLA_RADIUS + 8 ? 14 : 6;
-      if (depth >= minCave && this.isCave(x, y, depth)) return T.AIR;
+      if (depth >= minCave && this.isCave(x, y, depth)) {
+        // 洞窟の床にはときどききのこが生える
+        if (!this.isCave(x, y + 1, depth + 1) && RS.hash(x, y, this.seed + 71) < 0.08) return T.MUSHROOM;
+        return T.AIR;
+      }
       if (depth <= 3 + (RS.hash(x, 7, this.seed) < 0.5 ? 1 : 0)) return T.DIRT;
       return T.STONE;
     }

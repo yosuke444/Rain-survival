@@ -338,18 +338,23 @@
     }
 
     // ---------------- メニュー ----------------
-    nearTable() {
+    // 近くのクラフトテーブル・調理器具のうち、いちばん近いもの（メニューの種類を返す）
+    nearStation() {
       const p = this.player, cx = p.cx(), cy = p.cy(), R = C.TABLE_REACH;
+      let best = 2, bd = Infinity;
       for (let y = Math.floor(cy - R); y <= Math.floor(cy + R); y++) {
         for (let x = Math.floor(cx - R); x <= Math.floor(cx + R); x++) {
-          if (this.world.get(x, y) === T.TABLE && Math.hypot(x + 0.5 - cx, y + 0.5 - cy) <= R + 0.5) return true;
+          const t = this.world.get(x, y);
+          if (t !== T.TABLE && !RS.TILES[t].utensil) continue;
+          const d = Math.hypot(x + 0.5 - cx, y + 0.5 - cy);
+          if (d <= R + 0.5 && d < bd) { bd = d; best = t === T.TABLE ? 3 : 'u:' + t; }
         }
       }
-      return false;
+      return best;
     }
     openMenu() {
       if (this.eating) RS.meal.cancel(this);
-      this.menu.size = this.nearTable() ? 3 : 2;
+      this.menu.size = this.nearStation();
       this.state = 'menu';
       this.showTouch();
       this.menu.lastPtr = null;
@@ -437,6 +442,7 @@
 
       if (this.eating) { this.mine.key = null; return; }
       if (def && def.food) { this.mine.key = null; if (usePressed) { RS.meal.start(this); this.mineLock = true; } return; }
+      if (def && def.fillWater) { this.mine.key = null; if (usePressed) this.fillWater(); return; }
 
       if (def && def.place != null) {
         this.mine.key = null;
@@ -467,6 +473,21 @@
       if (this.mine.t >= info.time) { this.breakTile(t.x, t.y, tile); this.mine.key = null; this.mine.t = 0; }
     }
 
+    // からのコップで、傘の下の普通の雨をためる
+    fillWater() {
+      const p = this.player, w = this.world;
+      const x = Math.floor(p.cx());
+      const open = p.y < w.surface(x) && w.isProtected(p.cx(), p.y); // 地上で、傘の下
+      let roof = false;
+      for (let y = Math.floor(p.y) - 1; y > Math.floor(p.y) - 40; y--) if (RS.TILES[w.get(x, y)].solid) { roof = true; break; }
+      if (!open || roof) { this.toast('雨水は、傘の下の 空が見える所で ためられます'); return; }
+      this.inv.consumeHeld(1);
+      const left = this.inv.add('water', 1);
+      if (left) this.inv.add('cup', 1);
+      else this.floater(p.cx(), p.y - 0.2, '+1 雨水');
+      p.swingT = 0.25;
+    }
+
     explain(t, placing) {
       if (this.mode === 'mouse') {
         if (t && !t.inRange) this.toast('とどかない（' + C.MOUSE_REACH + 'マスまで）');
@@ -492,6 +513,10 @@
         if (Math.random() < C.APPLE_CHANCE) gained.push('apple');
         if (Math.random() < C.SAPLING_CHANCE) gained.push('sapling');
       } else if (td.drop) gained.push(td.drop);
+      if (tile === T.GRASS) { // 草からは、ときどき食材が見つかる
+        if (Math.random() < C.BERRY_CHANCE) gained.push('berry');
+        if (Math.random() < C.HERB_CHANCE) gained.push('herb');
+      }
       let off = 0;
       for (const id of gained) {
         if (!this.inv.add(id, 1)) { this.floater(x + 0.5, y - off, '+1 ' + RS.ITEMS[id].name); off += 0.5; }
@@ -507,7 +532,7 @@
       if (td.solid && p.x < x + 1 && p.x + p.w > x && p.y < y + 1 && p.y + p.h > y) return false;
       const below = w.get(x, y + 1);
       if (def.needsSoil && below !== T.GRASS && below !== T.DIRT) return false;
-      if ((def.place === T.TABLE || def.chair) && !RS.TILES[below].solid) return false;
+      if ((def.place === T.TABLE || def.chair || RS.TILES[def.place].utensil) && !RS.TILES[below].solid) return false;
       return w.get(x - 1, y) !== T.AIR || w.get(x + 1, y) !== T.AIR || w.get(x, y - 1) !== T.AIR || below !== T.AIR;
     }
 
@@ -857,8 +882,8 @@
         const big = !!(it.tool || held.id === 'stick');
         const sz = Tp * (big ? 0.7 : 0.42);
         hg.save();
-        if (big) { hg.rotate(Math.PI / 4); hg.drawImage(RS.art.icons[held.id], -0.22 * sz, -0.78 * sz, sz, sz); }
-        else hg.drawImage(RS.art.icons[held.id], -sz / 2, -sz * 0.15, sz, sz);
+        if (big) { hg.rotate(Math.PI / 4); hg.drawImage(RS.iconOf(held), -0.22 * sz, -0.78 * sz, sz, sz); }
+        else hg.drawImage(RS.iconOf(held), -sz / 2, -sz * 0.15, sz, sz);
         hg.restore();
       } : null;
       const drawHeld = this.eating ? pose.heldF || null : invHeld;

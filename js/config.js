@@ -52,6 +52,8 @@ RS.CONFIG = {
   STACK_MAX: 99,         // 1スロットに重ねられる数
   APPLE_CHANCE: 0.2,     // 葉を取ったときにりんごが出る確率
   SAPLING_CHANCE: 0.15,  // 葉を取ったときに苗木が出る確率
+  BERRY_CHANCE: 0.1,     // 草を掘ったときに野いちごが出る確率
+  HERB_CHANCE: 0.12,     // 草を掘ったときに野草が出る確率
   SAPLING_GROW_MIN: 90,  // 苗木が木になるまでの最短秒数
   SAPLING_GROW_MAX: 180, // 苗木が木になるまでの最長秒数
 

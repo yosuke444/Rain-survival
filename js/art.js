@@ -152,6 +152,45 @@
         S.line(g, [[0.22 * u, 0.2 * u], [0.22 * u, 0.4 * u]], { stroke: COL.plank, lw: u * 0.05, amp: 0 });
         break;
       }
+      case T.CAMPFIRE: {
+        const o = (extra) => Object.assign({ stroke: L, lw: u * 0.05, seed: sd(r), amp: u * 0.01, step: u * 0.15 }, extra);
+        S.shape(g, [[0.5 * u, 0.25 * u], [0.72 * u, 0.6 * u], [0.62 * u, 0.82 * u], [0.38 * u, 0.82 * u], [0.28 * u, 0.6 * u]], o({ fill: '#f3a35b' }));
+        S.shape(g, [[0.5 * u, 0.48 * u], [0.6 * u, 0.68 * u], [0.5 * u, 0.82 * u], [0.4 * u, 0.68 * u]], o({ fill: '#f7d978', lw: u * 0.03 }));
+        S.rect(g, 0.1 * u, 0.8 * u, 0.8 * u, 0.12 * u, o({ fill: COL.bark, r: 0.05 * u }));
+        S.line(g, [[0.15 * u, 0.95 * u], [0.85 * u, 0.78 * u]], o({ stroke: COL.barkDark, lw: u * 0.08 }));
+        break;
+      }
+      case T.BOARD: {
+        const o = (extra) => Object.assign({ stroke: L, lw: u * 0.05, seed: sd(r), amp: u * 0.01, step: u * 0.15 }, extra);
+        S.rect(g, 0.16 * u, 0.58 * u, 0.1 * u, 0.42 * u, o({ fill: COL.plankDark, r: 0.03 * u }));
+        S.rect(g, 0.74 * u, 0.58 * u, 0.1 * u, 0.42 * u, o({ fill: COL.plankDark, r: 0.03 * u }));
+        S.rect(g, 0.06 * u, 0.48 * u, 0.88 * u, 0.14 * u, o({ fill: COL.plank, r: 0.04 * u }));
+        S.rect(g, 0.2 * u, 0.38 * u, 0.6 * u, 0.1 * u, o({ fill: '#f6deb0', r: 0.03 * u }));
+        S.line(g, [[0.55 * u, 0.36 * u], [0.78 * u, 0.22 * u]], o({ stroke: '#bdb8ae', lw: u * 0.05 }));
+        break;
+      }
+      case T.POT: case T.PAN: {
+        const o = (extra) => Object.assign({ stroke: L, lw: u * 0.05, seed: sd(r), amp: u * 0.01, step: u * 0.15 }, extra);
+        S.rect(g, 0.12 * u, 0.72 * u, 0.76 * u, 0.28 * u, o({ fill: '#b8b2a8', r: 0.04 * u }));
+        S.shape(g, [[0.3 * u, 0.8 * u], [0.5 * u, 0.62 * u], [0.7 * u, 0.8 * u]], o({ fill: '#f3a35b', lw: u * 0.03 }));
+        if (type === T.POT) {
+          S.rect(g, 0.18 * u, 0.3 * u, 0.64 * u, 0.4 * u, o({ fill: '#9a9aa6', r: 0.1 * u }));
+          S.line(g, [[0.12 * u, 0.36 * u], [0.88 * u, 0.36 * u]], o({ lw: u * 0.06 }));
+          S.ellipse(g, 0.5 * u, 0.24 * u, 0.06 * u, 0.04 * u, o({ fill: '#9a9aa6', n: 8 }));
+        } else {
+          S.rect(g, 0.16 * u, 0.56 * u, 0.5 * u, 0.12 * u, o({ fill: '#5f6b8a', r: 0.05 * u }));
+          S.line(g, [[0.64 * u, 0.6 * u], [0.92 * u, 0.5 * u]], o({ stroke: COL.barkDark, lw: u * 0.07 }));
+        }
+        break;
+      }
+      case T.MUSHROOM: {
+        const o = (extra) => Object.assign({ stroke: L, lw: u * 0.04, seed: sd(r), amp: u * 0.01, step: u * 0.12 }, extra);
+        for (const [x, s2] of [[0.36, 1], [0.66, 0.75]]) {
+          S.rect(g, (x - 0.05) * u, (1 - 0.32 * s2) * u, 0.1 * u, 0.32 * s2 * u, o({ fill: '#fff6e6', r: 0.03 * u }));
+          S.shape(g, [[(x - 0.17 * s2) * u, (1 - 0.3 * s2) * u], [(x - 0.12 * s2) * u, (1 - 0.48 * s2) * u], [x * u, (1 - 0.55 * s2) * u], [(x + 0.12 * s2) * u, (1 - 0.48 * s2) * u], [(x + 0.17 * s2) * u, (1 - 0.3 * s2) * u]], o({ fill: '#c8a27a' }));
+        }
+        break;
+      }
       case T.SAPLING:
         S.line(g, [[0.5 * u, u], [0.47 * u, 0.75 * u], [0.52 * u, 0.5 * u]], { stroke: '#5f8f45', lw: u * 0.07, amp: 0 });
         S.ellipse(g, 0.36 * u, 0.54 * u, 0.14 * u, 0.07 * u, { fill: COL.leaf, stroke: L, lw: u * 0.035, seed: sd(r), amp: u * 0.01 });
@@ -197,6 +236,23 @@
       g.restore();
       return;
     }
+    if (id === 'berry') {
+      for (const [x, y] of [[26, 38], [38, 36], [32, 26]]) S.ellipse(g, x, y, 9, 9, { fill: '#d9435a', stroke: L, lw: 2.5, seed: x, amp: 0.6, step: 6 });
+      S.ellipse(g, 34, 16, 8, 4, { fill: COL.leaf, stroke: L, lw: 2, seed: 7, amp: 0.4 });
+      return;
+    }
+    if (id === 'herb') {
+      S.line(g, [[32, 54], [32, 20]], { stroke: '#5f8f45', lw: 4, amp: 0.5 });
+      for (const [x, y, k] of [[22, 30, -1], [42, 26, 1], [24, 44, -1], [40, 40, 1]]) S.ellipse(g, x, y, 9, 5, { fill: '#7cbf5a', stroke: L, lw: 2, seed: x + y, amp: 0.5 });
+      return;
+    }
+    if (id === 'mushroom') { g.save(); g.translate(10, 10); drawTileArt(g, T.MUSHROOM, 44, RS.rng(5)); g.restore(); return; }
+    if (id === 'cup' || id === 'water') {
+      S.shape(g, [[20, 16], [44, 16], [41, 52], [23, 52]], { fill: 'rgba(255,255,255,0.7)', stroke: L, lw: 3, seed: 21, amp: 0.6, step: 8 });
+      if (id === 'water') S.shape(g, [[21.5, 28], [42.5, 28], [41, 50], [23, 50]], { fill: '#bfe3f7', seed: 22, amp: 0.4, step: 8 });
+      return;
+    }
+    if (id === 'dish') return;
     if (id === 'stick') {
       S.line(g, [[16, 50], [48, 14]], { stroke: L, lw: 9, amp: 0.8, step: 10 });
       S.line(g, [[16, 50], [48, 14]], { stroke: COL.bark, lw: 4.5, amp: 0 });

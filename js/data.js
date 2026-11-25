@@ -6,7 +6,8 @@
   const RS = window.RS;
 
   // ブロックの番号
-  const T = RS.T = { AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, LOG: 4, LEAVES: 5, PLANKS: 6, TABLE: 7, SAPLING: 8, CHAIR_R: 9, CHAIR_L: 10 };
+  const T = RS.T = { AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, LOG: 4, LEAVES: 5, PLANKS: 6, TABLE: 7, SAPLING: 8, CHAIR_R: 9, CHAIR_L: 10,
+    CAMPFIRE: 11, BOARD: 12, POT: 13, PAN: 14, MUSHROOM: 15 };
 
   // solid: ぶつかるか / terrain: 地形として縁取りするか / hard: 素手で掘る秒数
   // tool: 速く掘れる道具 / needTool: その道具がないと掘れない / drop: 掘ると手に入るアイテム
@@ -23,6 +24,13 @@
   // いす（右向き・左向き）。座れる
   RS.TILES[T.CHAIR_R] = { name: '木のいす', solid: false, hard: 1.0, tool: 'axe', drop: 'chair', color: '#c89560', seat: 1 };
   RS.TILES[T.CHAIR_L] = { name: '木のいす', solid: false, hard: 1.0, tool: 'axe', drop: 'chair', color: '#c89560', seat: -1 };
+  // 調理器具（近くで X を押すと料理ができる）
+  RS.TILES[T.CAMPFIRE] = { name: 'たき火', solid: false, hard: 0.8, tool: 'axe', drop: 'campfire', color: '#f3a35b', utensil: true };
+  RS.TILES[T.BOARD] = { name: 'まな板', solid: false, hard: 0.8, tool: 'axe', drop: 'board', color: '#e8c08a', utensil: true };
+  RS.TILES[T.POT] = { name: 'なべ', solid: false, hard: 1.2, tool: 'pickaxe', drop: 'pot', color: '#9a9aa6', utensil: true };
+  RS.TILES[T.PAN] = { name: 'フライパン', solid: false, hard: 1.2, tool: 'pickaxe', drop: 'pan', color: '#5f6b8a', utensil: true };
+  // 洞窟の床に生えるきのこ
+  RS.TILES[T.MUSHROOM] = { name: 'きのこ', solid: false, hard: 0.1, tool: null, drop: 'mushroom', color: '#c8a27a' };
 
   // アイテム。place: 設置するとなるブロック / food: 食べられる / max: 重ねられる数
   RS.ITEMS = {
@@ -35,6 +43,19 @@
     stick:   { name: '棒' },
     apple:   { name: 'りんご', food: { kind: 'eat', amount: 25, motion: 'bite', dur: 8, look: { main: '#ee8577' } } },
     chair:   { name: '木のいす', place: T.CHAIR_R, chair: true },
+    // 食材
+    berry:    { name: '野いちご', food: { kind: 'eat', amount: 10, motion: 'bite', dur: 5, look: { main: '#d9435a' } } },
+    herb:     { name: '野草' },
+    mushroom: { name: 'きのこ' },
+    water:    { name: '雨水', food: { kind: 'drink', amount: 8, motion: 'cup', dur: 6, look: { main: '#bfe3f7' } }, max: 10 },
+    cup:      { name: 'からのコップ', fillWater: true, max: 10 },
+    // 調理器具
+    campfire: { name: 'たき火', place: T.CAMPFIRE },
+    board:    { name: 'まな板', place: T.BOARD },
+    pot:      { name: 'なべ', place: T.POT },
+    pan:      { name: 'フライパン', place: T.PAN },
+    // 料理（名前・見た目・効果はスタックのデータに入る）
+    dish:     { name: '料理', food: true, max: 10 },
   };
 
   // レシピ（材料がそろえば作れる形式。1スロットにつき1個使う）
@@ -58,5 +79,11 @@
   }
   // いす（クラフトテーブルが必要。仮のレシピ）
   RS.RECIPES.push({ out: 'chair', n: 1, table: true, in: ['planks', 'planks', 'planks', 'stick'] });
+  // 料理の道具（仮のレシピ）
+  RS.RECIPES.push({ out: 'campfire', n: 1, in: ['log', 'stick', 'stick'] });
+  RS.RECIPES.push({ out: 'board', n: 1, table: true, in: ['planks', 'log'] });
+  RS.RECIPES.push({ out: 'cup', n: 2, table: true, in: ['planks', 'stick'] });
+  RS.RECIPES.push({ out: 'pot', n: 1, table: true, in: ['stone', 'stone', 'stone', 'stone'] });
+  RS.RECIPES.push({ out: 'pan', n: 1, table: true, in: ['stone', 'stone', 'planks'] });
   for (const r of RS.RECIPES) r.key = [...r.in].sort().join('|');
 })();
