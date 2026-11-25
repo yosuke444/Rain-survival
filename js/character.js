@@ -39,7 +39,7 @@
   let U = 40; // いま描いている大きさ（CH.draw で設定）
   const X = {};
   X.path = (pts, closed) => { const p = new Path2D(); S.trace(p, pts, closed !== false); return p; };
-  X.lw = (lw) => Math.max(0.6, Math.min(lw || U, U * 0.015)); // 輪郭線の太さ（1マスの1.5%まで）
+  X.lw = (lw) => Math.max(0.5, Math.min(lw || U, U * 0.01)); // 輪郭線の太さ（1マスの1%まで。アニメ絵のような細い線）
   // 形をずらして重ね、はみ出た部分だけを塗る（ふちに沿った帯になる）
   function band(g, p, dx, dy, col) {
     const q = new Path2D();
@@ -210,10 +210,13 @@
     }
   }
 
-  // 奥の目（小さめ・左右反転）と手前の目を描く。tilt + で目じりが下がる
+  // 顔はほぼ正面向き。FX = 顔のパーツの中心（向いている方向へ少しだけずらす）
+  const FX = 0.03;
+  // 左右の目（大きさは同じ。左の目は左右反転）。tilt + で目じりが下がる
   const twoEyes = (tilt, forceStyle) => (g, u, c, state, skin) => {
     const st = CH.EYE_STYLES[forceStyle || CH.eyeStyle];
-    for (const [x, w, flip] of [[-0.06, 0.088, -1], [0.21, 0.105, 1]]) {
+    for (const [x, flip] of [[FX - 0.18, -1], [FX + 0.18, 1]]) {
+      const w = 0.1;
       g.save();
       g.translate(x * u, 0.09 * u);
       g.scale(flip, 1);
@@ -230,7 +233,7 @@
   };
 
   function mouth(g, u, state, t) {
-    const x = 0.1 * u, y = 0.25 * u;
+    const x = FX * u, y = 0.27 * u;
     g.strokeStyle = '#7a3e32'; g.lineWidth = Math.max(0.6, u * 0.014); g.lineCap = 'round';
     if (state === 'open' || (state === 'chew' && Math.sin(t * 12) > 0)) {
       g.fillStyle = '#c9675e';
@@ -246,26 +249,26 @@
   const P = (u, pts) => pts.map(([x, y]) => [x * u, y * u]);
   const HAIRS = {
     bob: {
-      back: (g, u, c) => X.shape(g, P(u, [[-0.5, -0.05], [-0.53, 0.2], [-0.46, 0.4], [-0.2, 0.38], [0.0, 0.2], [0.25, 0.1], [0.4, -0.1], [0.3, -0.4], [0, -0.5], [-0.35, -0.42]]), o(u, 51, { fill: shade(c, 0.85), flat: true })),
-      frontPts: (u) => P(u, [[-0.5, 0.02], [-0.53, -0.2], [-0.38, -0.43], [-0.05, -0.53], [0.3, -0.46], [0.48, -0.26], [0.53, -0.06],
-        [0.47, -0.08], [0.4, -0.02], [0.33, -0.13], [0.24, -0.05], [0.15, -0.15], [0.06, -0.07], [-0.04, -0.17], [-0.14, -0.09],
-        [-0.22, -0.18], [-0.3, -0.02], [-0.35, 0.18], [-0.48, 0.2]]),
+      back: (g, u, c) => X.shape(g, P(u, [[-0.5, -0.05], [-0.55, 0.2], [-0.5, 0.4], [-0.3, 0.36], [0.3, 0.36], [0.5, 0.4], [0.55, 0.2], [0.5, -0.05], [0.4, -0.4], [0, -0.52], [-0.4, -0.4]]), o(u, 51, { fill: shade(c, 0.85), flat: true })),
+      frontPts: (u) => P(u, [[-0.52, 0.22], [-0.55, -0.12], [-0.44, -0.4], [0, -0.55], [0.44, -0.4], [0.55, -0.12], [0.52, 0.22],
+        [0.46, 0.26], [0.42, 0.0], [0.36, -0.12], [0.28, -0.05], [0.2, -0.15], [0.11, -0.07], [0.02, -0.17], [-0.07, -0.07],
+        [-0.16, -0.15], [-0.24, -0.05], [-0.32, -0.12], [-0.4, 0.0], [-0.44, 0.26]]),
       front: (g, u, c) => hairFront(g, u, c, HAIRS.bob.frontPts(u)),
     },
     short: {
       back: () => {},
-      frontPts: (u) => P(u, [[-0.48, 0.05], [-0.52, -0.2], [-0.38, -0.43], [-0.05, -0.52], [0.3, -0.46], [0.48, -0.26], [0.5, -0.1],
-        [0.42, -0.14], [0.34, -0.08], [0.26, -0.2], [0.14, -0.12], [0.04, -0.22], [-0.08, -0.14], [-0.2, -0.24], [-0.3, -0.12], [-0.4, 0.06]]),
+      frontPts: (u) => P(u, [[-0.5, 0.04], [-0.54, -0.18], [-0.42, -0.42], [0, -0.54], [0.42, -0.42], [0.54, -0.18], [0.5, 0.04],
+        [0.43, -0.06], [0.34, -0.16], [0.24, -0.09], [0.14, -0.2], [0.04, -0.12], [-0.06, -0.21], [-0.16, -0.11], [-0.26, -0.2], [-0.36, -0.1], [-0.43, -0.06]]),
       front: (g, u, c) => hairFront(g, u, c, HAIRS.short.frontPts(u)),
     },
     long: {
-      back: (g, u, c) => X.shape(g, P(u, [[-0.5, -0.1], [-0.56, 0.3], [-0.52, 0.72], [-0.3, 0.8], [-0.1, 0.7], [0.05, 0.3], [0.3, 0.12], [0.42, -0.1], [0.3, -0.4], [0, -0.5], [-0.35, -0.42]]), o(u, 55, { fill: shade(c, 0.85), flat: true })),
+      back: (g, u, c) => X.shape(g, P(u, [[-0.5, -0.1], [-0.58, 0.3], [-0.56, 0.75], [-0.36, 0.82], [-0.2, 0.5], [0.2, 0.5], [0.36, 0.82], [0.56, 0.75], [0.58, 0.3], [0.5, -0.1], [0.4, -0.42], [0, -0.52], [-0.4, -0.42]]), o(u, 55, { fill: shade(c, 0.85), flat: true })),
       frontPts: (u) => HAIRS.bob.frontPts(u),
       front: (g, u, c) => HAIRS.bob.front(g, u, c),
     },
     twin: {
       back: (g, u, c) => {
-        for (const [x, sd] of [[-0.52, 56], [0.46, 57]]) {
+        for (const [x, sd] of [[-0.58, 56], [0.58, 57]]) {
           X.shape(g, P(u, [[x - 0.08, -0.25], [x + 0.1, -0.25], [x + 0.14, 0.2], [x + 0.06, 0.62], [x - 0.08, 0.66], [x - 0.12, 0.2]]), o(u, sd, { fill: shade(c, 0.9) }));
           X.ellipse(g, (x + 0.01) * u, -0.24 * u, 0.06 * u, 0.06 * u, o(u, sd + 10, { fill: '#e58c6c', n: 8 }));
         }
@@ -284,12 +287,12 @@
     const p = X.shape(g, pts, o(u, 53, { fill: c }));
     g.save(); g.clip(p);
     g.strokeStyle = shade(c, 0.72); g.lineWidth = Math.max(0.4, u * 0.009); g.lineCap = 'round';
-    for (const [x0, x1, y1] of [[-0.25, -0.18, -0.12], [-0.05, 0.02, -0.1], [0.12, 0.17, -0.09], [0.28, 0.33, -0.07], [0.4, 0.47, -0.04]]) {
+    for (const [x0, x1, y1] of [[-0.3, -0.36, -0.1], [-0.12, -0.16, -0.12], [0.06, 0.1, -0.1], [0.24, 0.28, -0.1], [0.38, 0.44, -0.06]]) {
       g.beginPath(); g.moveTo(x0 * u, -0.46 * u); g.quadraticCurveTo((x0 + x1) / 2 * u + 0.03 * u, -0.3 * u, x1 * u, y1 * u); g.stroke();
     }
     g.strokeStyle = 'rgba(255,255,255,0.5)'; g.lineWidth = u * 0.03;
-    g.beginPath(); g.moveTo(-0.32 * u, -0.3 * u); g.quadraticCurveTo(-0.2 * u, -0.38 * u, -0.08 * u, -0.38 * u); g.stroke();
-    g.beginPath(); g.moveTo(0.02 * u, -0.39 * u); g.quadraticCurveTo(0.16 * u, -0.38 * u, 0.28 * u, -0.32 * u); g.stroke();
+    g.beginPath(); g.moveTo(-0.36 * u, -0.3 * u); g.quadraticCurveTo(-0.24 * u, -0.39 * u, -0.08 * u, -0.41 * u); g.stroke();
+    g.beginPath(); g.moveTo(0.06 * u, -0.41 * u); g.quadraticCurveTo(0.22 * u, -0.4 * u, 0.36 * u, -0.31 * u); g.stroke();
     g.restore();
     g.strokeStyle = LINE; g.lineWidth = X.lw(u * 0.02); g.stroke(p);
   }
@@ -326,16 +329,16 @@
     } },
     glasses: { layer: 'face', draw: (g, u, c) => {
       g.strokeStyle = c; g.lineWidth = u * 0.03;
-      g.beginPath(); g.ellipse(-0.04 * u, 0.07 * u, 0.11 * u, 0.12 * u, 0, 0, Math.PI * 2); g.stroke();
-      g.beginPath(); g.ellipse(0.21 * u, 0.07 * u, 0.12 * u, 0.13 * u, 0, 0, Math.PI * 2); g.stroke();
-      g.beginPath(); g.moveTo(0.07 * u, 0.04 * u); g.lineTo(0.09 * u, 0.04 * u); g.stroke();
+      g.lineWidth = Math.max(0.6, u * 0.018);
+      for (const ex of [FX - 0.18, FX + 0.18]) { g.beginPath(); g.ellipse(ex * u, 0.09 * u, 0.13 * u, 0.15 * u, 0, 0, Math.PI * 2); g.stroke(); }
+      g.beginPath(); g.moveTo((FX - 0.05) * u, 0.06 * u); g.lineTo((FX + 0.05) * u, 0.06 * u); g.stroke();
     } },
   };
 
   // 服：back = 体の後ろ側（フードなど）、front = 体
   const TOPS = {
     raincoat: {
-      back: (g, u, c) => X.ellipse(g, -0.2 * u, -0.8 * u, 0.2 * u, 0.13 * u, o(u, 61, { fill: shade(c, 0.88) })),
+      back: (g, u, c) => X.ellipse(g, -0.04 * u, -0.8 * u, 0.24 * u, 0.12 * u, o(u, 61, { fill: shade(c, 0.88) })),
       front: (g, u, c) => {
         X.shape(g, P(u, [[-0.17, -0.81], [0.17, -0.81], [0.22, -0.55], [0.28, -0.25], [0, -0.23], [-0.28, -0.25], [-0.22, -0.55]]), o(u, 63, { fill: c }));
         X.line(g, P(u, [[0.07, -0.78], [0.08, -0.5], [0.09, -0.25]]), { stroke: shade(c, 0.7), lw: u * 0.025, amp: 0 });
@@ -346,7 +349,7 @@
       },
     },
     hoodie: {
-      back: (g, u, c) => X.ellipse(g, -0.18 * u, -0.8 * u, 0.18 * u, 0.12 * u, o(u, 68, { fill: shade(c, 0.85) })),
+      back: (g, u, c) => X.ellipse(g, -0.04 * u, -0.8 * u, 0.22 * u, 0.11 * u, o(u, 68, { fill: shade(c, 0.85) })),
       front: (g, u, c) => {
         X.shape(g, P(u, [[-0.2, -0.81], [0.2, -0.81], [0.24, -0.5], [0.23, -0.3], [-0.23, -0.3], [-0.24, -0.5]]), o(u, 69, { fill: c }));
         X.rect(g, -0.06 * u, -0.48 * u, 0.24 * u, 0.12 * u, o(u, 70, { fill: shade(c, 0.92), lw: u * 0.03, r: 0.03 * u }));
@@ -462,7 +465,7 @@
     const b = pose.bob;
     g.save();
     g.translate(0, pose.dy * u);
-    arm(g, u, look, -0.09, -0.72 + b, pose.armB, 71, true, null);
+    arm(g, u, look, -0.15, -0.72 + b, pose.armB, 71, true, null);
     leg(g, u, look, -0.07, -0.3, pose.legB, 81, true);
     leg(g, u, look, 0.07, -0.3, pose.legF, 85, false);
     g.save();
@@ -484,7 +487,7 @@
     g.fillStyle = shade(skin, 0.9); g.fill(X.path(hair.frontPts(u)));
     g.restore();
     g.strokeStyle = LINE; g.lineWidth = X.lw(u * 0.02); g.stroke(fp);
-    for (const [bx, by] of [[-0.12, 0.21], [0.33, 0.21]]) { // ほおの赤み
+    for (const [bx, by] of [[FX - 0.27, 0.23], [FX + 0.27, 0.23]]) { // ほおの赤み
       const rg = g.createRadialGradient(bx * u, by * u, 0, bx * u, by * u, 0.09 * u);
       rg.addColorStop(0, 'rgba(245,130,130,0.45)'); rg.addColorStop(1, 'rgba(245,130,130,0)');
       g.fillStyle = rg; g.beginPath(); g.ellipse(bx * u, by * u, 0.09 * u, 0.06 * u, 0, 0, Math.PI * 2); g.fill();
@@ -497,7 +500,7 @@
     if (HEADS[look.head.type]) HEADS[look.head.type](g, u, look.head.color);
     g.restore();
     if (acc && acc.layer === 'body') { g.save(); g.translate(0, b * u); acc.draw(g, u, look.acc.color); g.restore(); }
-    arm(g, u, look, 0.03, -0.72 + b, pose.armF, 75, false, held);
+    arm(g, u, look, 0.13, -0.72 + b, pose.armF, 75, false, held);
     g.restore();
   };
 })();
