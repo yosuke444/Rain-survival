@@ -15,7 +15,8 @@
     return null;
   }
 
-  R.start = function (game) {
+  // setup = 撮影モードで決めた ズーム・角度・位置・フィルター
+  R.start = function (game, setup) {
     const type = pickType();
     if (!type || !HTMLCanvasElement.prototype.captureStream) { game.toast('このブラウザでは 録画できません'); return; }
     if (R.progress != null) { game.toast('前の動画を 変換中です'); return; }
@@ -33,14 +34,22 @@
     rec.onstop = () => finish(game, type);
     rec.start(1000);
     R.rec = rec; R.stream = stream; R.type = type;
+    R.setup = setup || RS.pm.blank();
     R.active = true; R.t0 = performance.now();
     game.toast('録画を はじめました（もう一度 ' + (game.touch ? 'ボタン' : 'E') + ' で おわる）');
   };
 
-  // 毎フレーム、UI を描く前の画面を写す
-  R.frame = function (canvas) {
+  // 毎フレーム、UI を描く前の画面を、セットアップどおりに変形して写す
+  R.frame = function (canvas, game) {
     if (!R.active) return;
-    R.ctx.drawImage(canvas, 0, 0, R.cv.width, R.cv.height);
+    const c = R.ctx, w = R.cv.width, h = R.cv.height, s = R.setup, k = w / game.W;
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.fillStyle = game.world.theme.sky; c.fillRect(0, 0, w, h);
+    c.save();
+    RS.pm.transform(c, w, h, { zoom: s.zoom, rot: s.rot, px: s.px * k, py: s.py * k });
+    c.drawImage(canvas, 0, 0, w, h);
+    c.restore();
+    RS.pm.filter(c, w, h, s.filter, R.cv);
   };
 
   R.elapsed = () => (R.active ? (performance.now() - R.t0) / 1000 : 0);
@@ -53,7 +62,7 @@
     game.toast(msg || '録画を おわりました');
   };
 
-  R.toggle = function (game) { if (R.active) R.stop(game); else R.start(game); };
+
 
   // 最大録画時間（設定。0 = 無制限）
   R.check = function (game) {

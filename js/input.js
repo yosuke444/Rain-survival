@@ -18,6 +18,8 @@
     Escape: 'esc',                       // ゲーム中メニュー（仮）
     KeyQ: 'photo',                       // スクリーンショット
     KeyE: 'rec',                         // 録画の開始・終了
+    KeyR: 'reset',                       // 撮影モード：もとに戻す
+    ShiftLeft: 'shift', ShiftRight: 'shift', // 撮影モード：Shift + 矢印で位置を動かす
   };
   for (let i = 1; i <= 9; i++) { KEYMAP['Digit' + i] = 'slot' + i; KEYMAP['Numpad' + i] = 'slot' + i; }
 
@@ -28,6 +30,8 @@
       this.events = [];       // ポインタのできごと
       this.ptrs = new Map();  // 押されているポインタ
       this.mouse = { x: 0, y: 0, has: false };
+      this.wheel = 0;                // マウスホイール（このフレームの合計）
+      canvas.addEventListener('wheel', (e) => { e.preventDefault(); this.wheel += e.deltaY; }, { passive: false });
 
       addEventListener('keydown', (e) => {
         if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -84,7 +88,7 @@
     down(k) { const s = this.src.get(k); return !!(s && s.size); }
     pressed(k) { return this.pr.has(k); }
     markUI(id) { const p = this.ptrs.get(id); if (p) p.ui = true; }
-    endFrame() { this.pr.clear(); this.events.length = 0; }
+    endFrame() { this.pr.clear(); this.events.length = 0; this.wheel = 0; }
   }
 
   RS.Input = Input;

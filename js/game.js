@@ -61,7 +61,7 @@
     // メニューを開いている間はボタンを隠す（メニューはタップで操作し、×で閉じる）
     showTouch() {
       const box = document.getElementById('touch');
-      const hide = !this.touch || this.state === 'menu' || this.screens.length > 0;
+      const hide = !this.touch || this.state === 'menu' || this.screens.length > 0 || !!this.pm;
       box.classList.toggle('hidden', hide);
       if (hide) {
         // 隠したボタンが押されたままにならないように離す
@@ -97,8 +97,14 @@
     ox() { return Math.round(this.W / 2 - this.cam.x * this.T); }
     oy() { return Math.round(this.H / 2 - this.cam.y * this.T); }
     viewRect() {
-      const hw = this.W / 2 / this.T, hh = this.H / 2 / this.T;
-      return { x0: this.cam.x - hw, x1: this.cam.x + hw, y0: this.cam.y - hh, y1: this.cam.y + hh };
+      let hw = this.W / 2 / this.T, hh = this.H / 2 / this.T, cx = this.cam.x, cy = this.cam.y;
+      const pm = this.pm;
+      if (pm) { // 撮影モード：回したときにすみまで描けるよう広めにとる
+        if (pm.rot) { const d = Math.hypot(hw, hh); hw = d; hh = d; }
+        hw /= pm.zoom; hh /= pm.zoom;
+        cx -= pm.px / this.T; cy -= pm.py / this.T;
+      }
+      return { x0: cx - hw, x1: cx + hw, y0: cy - hh, y1: cy + hh };
     }
 
     frame(now) {
@@ -116,14 +122,17 @@
 
     // ---------------- 進行 ----------------
     update(dt) {
-      this.time += dt;
       const inp = this.input, p = this.player;
 
-      // 撮影はいつでもできる（UI は写さない）
-      if (inp.pressed('photo')) this.photoReq = true;
-      if (inp.pressed('rec')) RS.rec.toggle(this);
-      RS.rec.check(this);
       this.flashT = Math.max(0, (this.flashT || 0) - dt);
+      RS.rec.check(this);
+      // 撮影モード・録画のセットアップ中は時間が止まる（まばたきなども止まる）
+      if (this.pm) { RS.pm.update(this, dt); return; }
+      this.time += dt;
+      if (!this.screens.length) {
+        if (inp.pressed('photo')) { RS.pm.enter(this, false); return; }
+        if (inp.pressed('rec')) { this.recButton(); if (this.pm) return; }
+      }
       // タイトル・ゲーム中メニュー・設定を開いている間は、ゲームは止める（雨だけ動かす）
       if (this.screens.length) {
         this.updateScreen();
@@ -274,8 +283,8 @@
           const h = RS.ui.hudHit(this, e.x, e.y);
           if (h === 'mode') { this.toggleMode(); inp.markUI(e.id); continue; }
           if (h === 'pause') { if (this.state === 'play') this.openScreen('pause'); inp.markUI(e.id); continue; }
-          if (h === 'photo') { this.photoReq = true; inp.markUI(e.id); continue; }
-          if (h === 'rec') { RS.rec.toggle(this); inp.markUI(e.id); continue; }
+          if (h === 'photo') { inp.markUI(e.id); RS.pm.enter(this, false); return; }
+          if (h === 'rec') { inp.markUI(e.id); this.recButton(); if (this.pm) return; continue; }
           if (typeof h === 'number' && (!mouse || this.mode === 'mouse')) {
             this.inv.sel = h; this.showSelName(); inp.markUI(e.id); continue;
           }
@@ -575,16 +584,25 @@
       g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
       g.fillStyle = this.world.theme.sky;
       g.fillRect(0, 0, this.W, this.H);
+      const pm = this.pm;
+      if (pm) { g.save(); RS.pm.transform(g, this.W, this.H, pm); }
       this.rain.drawNormal(g, this);
       this.drawUmbrella(g);
       this.drawTerrain(g);
       this.drawPlayer(g);
       this.rain.drawAcid(g, this);
       this.drawFx(g);
+      if (pm) { g.restore(); RS.pm.filter(g, this.W, this.H, pm.filter, this.canvas); }
       // ここまでがゲーム画面。写真・録画には UI と狙いの枠を写さない
       if (this.photoReq) this.takePhoto();
-      RS.rec.frame(this.canvas);
-      this.drawTarget(g);
+      RS.rec.frame(this.canvas, this);
+      if (this.pm) {
+        RS.pm.drawUI(g, this);
+      } else {
+        this.drawTarget(g);
+        if (RS.rec.active) RS.pm.drawRecFrame(g, this, RS.rec.setup);
+      }
+      if (this.pm) { this.drawFlash(g); return; }
       if (!this.screens.includes('title')) {
         RS.ui.drawHUD(g, this);
         if (this.state === 'menu') RS.ui.drawMenu(g, this);
@@ -594,6 +612,10 @@
         if (RS.SCREENS[name].custom) RS.SCREENS[name].draw(g, this);
         else RS.ui.drawScreen(g, this, name);
       }
+      this.drawFlash(g);
+    }
+
+    drawFlash(g) {
       if (this.flashT > 0) { // 撮影したときの白い光
         g.fillStyle = `rgba(255,255,255,${(this.flashT / 0.3) * 0.7})`;
         g.fillRect(0, 0, this.W, this.H);
@@ -729,8 +751,15 @@
       g.setLineDash([]);
     }
 
+    // 録画ボタン：録画中なら止める。そうでなければ録画のセットアップを開く
+    recButton() {
+      if (RS.rec.active) RS.rec.stop(this);
+      else RS.pm.enter(this, true);
+    }
+
     takePhoto() {
       this.photoReq = false;
+      if (this.photoExit) { this.photoExit = false; RS.pm.exit(this); }
       this.flashT = 0.3;
       RS.photo.capture(this.canvas)
         .then(() => this.toast('写真をとりました（アルバムに保存）'))
