@@ -100,3 +100,9 @@ RS.CONFIG.CHEST_LOOT = [               // 宝箱の中身（どれか 1 つ）
   [['cotton', 2], ['berry', 4]],
   [['crystal', 1], ['apple', 3]],
 ];
+
+// ---- 農業・畜産（仮） ----
+RS.CONFIG.CROP_STAGE_SEC = 90;   // 作物が 1 だんかい育つまでの秒数（3 だんかいで みのる）
+RS.CONFIG.SEED_CHANCE = 0.08;    // 草を掘ったときに、たね（いね・にんじん それぞれ）が出る確率
+RS.CONFIG.EGG_SEC = 120;         // にわとりから、つぎの卵がとれるまでの秒数
+RS.CONFIG.MILK_SEC = 150;        // うしから、つぎのミルクがとれるまでの秒数

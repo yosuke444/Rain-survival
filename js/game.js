@@ -41,6 +41,7 @@
       this.clock = C.DAY_SEC * 0.1; this.atkCd = 0; RS.enemy.reset(this); // 時刻・敵
       RS.prog.reset(this); // 傘の成長
       RS.boss.reset(this); // ダンジョンの状態
+      RS.farm.reset(this); // 畑・動物・掲示板
       this.saveT = 0; this.savedT = 0;
       const saveNow = () => RS.save.saveCurrent(this, true);
       document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
@@ -106,6 +107,7 @@
       this.clock = C.DAY_SEC * 0.1; this.atkCd = 0; RS.enemy.reset(this);
       RS.prog.reset(this);
       RS.boss.reset(this);
+      RS.farm.reset(this);
       this.spawn();
       this.cam.x = this.player.cx(); this.cam.y = this.player.cy() - 2;
     }
@@ -210,6 +212,7 @@
       RS.enemy.update(this, dt);
       RS.prog.update(this, dt);
       RS.boss.natural(this);
+      RS.farm.update(this, dt);
       const um = this.world.umb; um.dispR += (um.R - um.dispR) * Math.min(1, dt * 1.2); // 傘が広がるようす
       p.swingT = Math.max(0, p.swingT - dt);
 
@@ -493,6 +496,9 @@
       // 敵が近くにいれば、採掘より攻撃をさきに（設置・食べ物・コップを持っているときはしない）
       const foe = (def && (def.food || def.place != null || def.fillWater)) ? null : RS.enemy.target(this, this.mode === 'mouse' ? this.aimWorld() : null);
       this.foe = foe;
+      // 動物：なでる・卵・ミルク（素手・道具・コップのとき）
+      const pet = foe || (def && !def.tool && !def.fillWater) ? null : RS.farm.target(this, this.mode === 'mouse' ? this.aimWorld() : null);
+      if (pet) { this.mine.key = null; if (usePressed) RS.farm.interact(this, pet, def); return; }
       if (foe) {
         this.mine.key = null;
         if (useHeld && this.atkCd <= 0) { RS.enemy.hit(this, foe, RS.enemy.weaponDmg(def)); this.atkCd = C.ATTACK_CD; p.swingT = 0.25; }
@@ -520,6 +526,13 @@
       if (this.mineLock) return;
       if (!t || !t.valid) { this.mine.key = null; if (usePressed) this.explain(t, false); return; }
       const tile = this.world.get(t.x, t.y);
+      // みのった作物は収穫、掲示板は写真をはる（アックスを持っているときは こわす）
+      if (RS.TILES[tile].crop && RS.farm.cropOfTile(tile) && tile === RS.farm.CROPS[RS.farm.cropOfTile(tile)].tiles[2]) {
+        this.mine.key = null; if (usePressed) RS.farm.harvest(this, t.x, t.y, tile); return;
+      }
+      if (tile === T.PHOTOBOARD && !(def && def.tool === 'axe')) {
+        this.mine.key = null; if (usePressed) RS.farm.boardInteract(this, t.x, t.y); return;
+      }
       // 遺跡の扉・ボスの祭壇・宝箱は「しらべる」
       if (tile === T.DDOOR || tile === T.BOSS_ALTAR || tile === T.CHEST) {
         this.mine.key = null;
@@ -594,6 +607,8 @@
       if (tile === T.GRASS) { // 草からは、ときどき食材が見つかる
         if (Math.random() < C.BERRY_CHANCE) gained.push('berry');
         if (Math.random() < C.HERB_CHANCE) gained.push('herb');
+        if (Math.random() < C.SEED_CHANCE) gained.push('rice_seed');
+        if (Math.random() < C.SEED_CHANCE) gained.push('carrot_seed');
       }
       let off = 0;
       for (const id of gained) {
@@ -619,6 +634,7 @@
       const def = RS.ITEMS[id];
       this.world.set(x, y, def.chair ? (this.player.face > 0 ? T.CHAIR_R : T.CHAIR_L) : def.place);
       this.inv.consumeHeld(1);
+      if (def.crop) RS.farm.planted(this, x, y, def.crop);
       if (def.place === T.SAPLING) {
         this.world.saplings.push({ x, y, t: C.SAPLING_GROW_MIN + Math.random() * (C.SAPLING_GROW_MAX - C.SAPLING_GROW_MIN) });
       }
@@ -722,6 +738,8 @@
       this.drawUmbrella(g);
       this.drawTerrain(g);
       this.drawFloorClouds(g);
+      RS.farm.drawBoards(g, this);
+      RS.farm.drawAnimals(g, this);
       RS.enemy.draw(g, this);
       this.drawPlayer(g);
       this.rain.drawAcid(g, this);

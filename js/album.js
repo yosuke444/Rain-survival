@@ -30,9 +30,11 @@
     return game.album;
   }
 
-  RS.openAlbum = function (game) {
+  // onPick をわたすと「えらぶ」モード（掲示板に写真をはるときなど）
+  RS.openAlbum = function (game, onPick) {
     const A = state(game);
     A.list = null; A.view = -1; A.cursor = 0; A.page = 0; A.confirm = 0;
+    A.pick = onPick || null;
     PH.list().then((l) => {
       A.list = l;
       for (const r of l) {
@@ -89,6 +91,7 @@
         { kind: 'dl', label: game.touch ? '保存' : 'ダウンロード' },
         { kind: 'fav', label: rec && rec.fav ? '★ お気に入り' : '☆ お気に入り' },
         { kind: 'del', label: A.confirm > 0 ? 'ほんとうに消す？' : '削除' },
+        ...(A.pick ? [{ kind: 'pick', label: 'これにする' }] : []),
         { kind: 'vback', label: 'もどる' },
         { kind: 'vnext', label: '▶' },
       ];
@@ -114,6 +117,7 @@
       case 'vprev': if (list.length) A.view = (A.view - 1 + list.length) % list.length; A.confirm = 0; break;
       case 'vnext': if (list.length) A.view = (A.view + 1) % list.length; A.confirm = 0; break;
       case 'vback': A.view = -1; A.cursor = 0; break;
+      case 'pick': { const r = list[A.view]; if (r && A.pick) { const cb = A.pick; A.pick = null; game.backScreen(); cb(r); } break; }
       case 'dl': { const r = list[A.view]; if (r) PH.download(r.blob, PH.fileName(r.time, 'png')); break; }
       case 'fav': {
         const r = list[A.view];

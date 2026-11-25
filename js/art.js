@@ -264,6 +264,24 @@
         } else S.rect(g, 0.1 * u, 0.12 * u, 0.8 * u, 0.12 * u, o({ fill: '#d9a86c', r: 0.04 * u }));
         break;
       }
+      case T.RICE0: case T.RICE1: case T.RICE2: case T.CARROT0: case T.CARROT1: case T.CARROT2: {
+        const rice = type <= T.RICE2, st = rice ? type - T.RICE0 : type - T.CARROT0;
+        const hgt = [0.3, 0.55, 0.8][st];
+        for (const x of rice ? [0.3, 0.5, 0.7] : [0.42, 0.58]) {
+          S.line(g, [[x * u, u], [(x + (rice ? 0.04 : 0)) * u, (1 - hgt) * u]], { stroke: '#5f8f45', lw: u * 0.05, amp: 0 });
+          if (rice && st === 2) S.ellipse(g, (x + 0.06) * u, (1 - hgt + 0.08) * u, 0.06 * u, 0.12 * u, { fill: '#e9cf8a', stroke: L, lw: u * 0.03, seed: sd(r), amp: 0.3 });
+          if (!rice) S.ellipse(g, (x + (x < 0.5 ? -0.05 : 0.05)) * u, (1 - hgt + 0.06) * u, 0.07 * u, 0.04 * u, { fill: COL.leaf, stroke: L, lw: u * 0.025, seed: sd(r), amp: 0.3 });
+        }
+        if (!rice && st === 2) S.shape(g, [[0.36 * u, 0.92 * u], [0.64 * u, 0.92 * u], [0.5 * u, u * 1.08]], { fill: '#f3a35b', stroke: L, lw: u * 0.035, seed: sd(r), amp: 0.3 });
+        break;
+      }
+      case T.PHOTOBOARD: {
+        const o = (extra) => Object.assign({ stroke: L, lw: u * 0.05, seed: sd(r), amp: u * 0.01, step: u * 0.15 }, extra);
+        S.rect(g, 0.44 * u, 0.6 * u, 0.12 * u, 0.4 * u, o({ fill: COL.plankDark, r: 0.03 * u }));
+        S.rect(g, 0.02 * u, 0.06 * u, 0.96 * u, 0.62 * u, o({ fill: COL.plank, r: 0.05 * u }));
+        S.rect(g, 0.12 * u, 0.14 * u, 0.76 * u, 0.44 * u, o({ fill: '#fff6e6', r: 0.03 * u, lw: u * 0.03 }));
+        break;
+      }
       case T.SAPLING:
         S.line(g, [[0.5 * u, u], [0.47 * u, 0.75 * u], [0.52 * u, 0.5 * u]], { stroke: '#5f8f45', lw: u * 0.07, amp: 0 });
         S.ellipse(g, 0.36 * u, 0.54 * u, 0.14 * u, 0.07 * u, { fill: COL.leaf, stroke: L, lw: u * 0.035, seed: sd(r), amp: u * 0.01 });
@@ -338,7 +356,27 @@
       S.ellipse(g, 32, 32, 20, 17, { stroke: L, lw: 3, seed: t, amp: 0.8, n: 12 });
       return;
     }
-    if (id === 'bell') {
+    if (id === 'rice_seed' || id === 'carrot_seed') {
+      S.shape(g, [[18, 50], [16, 28], [24, 18], [40, 18], [48, 28], [46, 50]], { fill: '#e8dcc6', stroke: L, lw: 3, seed: 61, amp: 0.6, step: 8 });
+      for (const [x, y] of [[28, 36], [36, 40], [32, 30]]) S.ellipse(g, x, y, 3, 4, { fill: id === 'rice_seed' ? '#e9cf8a' : '#a97c52', amp: 0 });
+      return;
+    }
+    if (id === 'rice') {
+      for (const [x, y] of [[24, 30], [32, 26], [40, 30], [28, 38], [36, 38], [32, 46]]) S.ellipse(g, x, y, 5, 7, { fill: '#fff8ea', stroke: L, lw: 2, seed: x + y, amp: 0.3 });
+      return;
+    }
+    if (id === 'carrot') {
+      S.shape(g, [[24, 22], [42, 22], [34, 56]], { fill: '#f3a35b', stroke: L, lw: 3, seed: 62, amp: 0.6, step: 8 });
+      for (const dx of [-6, 0, 6]) S.line(g, [[33, 22], [33 + dx, 8]], { stroke: '#5f8f45', lw: 3, amp: 0 });
+      return;
+    }
+    if (id === 'egg') { S.ellipse(g, 32, 34, 14, 18, { fill: '#fffaf0', stroke: L, lw: 3, seed: 63, amp: 0.5, step: 8 }); return; }
+    if (id === 'milk') {
+      S.shape(g, [[20, 16], [44, 16], [41, 52], [23, 52]], { fill: 'rgba(255,255,255,0.7)', stroke: L, lw: 3, seed: 21, amp: 0.6, step: 8 });
+      S.shape(g, [[21.5, 26], [42.5, 26], [41, 50], [23, 50]], { fill: '#fffaf0', seed: 22, amp: 0.4, step: 8 });
+      return;
+    }
+        if (id === 'bell') {
       S.shape(g, [[20, 44], [22, 26], [32, 16], [42, 26], [44, 44]], { fill: '#8fc4ea', stroke: L, lw: 3, seed: 91, amp: 0.6, step: 8 });
       S.ellipse(g, 32, 48, 5, 5, { fill: '#f7d978', stroke: L, lw: 2, seed: 92, amp: 0.4 });
       S.line(g, [[32, 16], [32, 9]], { stroke: L, lw: 3, amp: 0 });

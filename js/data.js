@@ -9,7 +9,8 @@
   const T = RS.T = { AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, LOG: 4, LEAVES: 5, PLANKS: 6, TABLE: 7, SAPLING: 8, CHAIR_R: 9, CHAIR_L: 10,
     CAMPFIRE: 11, BOARD: 12, POT: 13, PAN: 14, MUSHROOM: 15,
     COPPER: 16, IRON: 17, CRYSTAL: 18, FURNACE: 19, ALTAR: 20, DOOR: 21, SKYORE: 22, SKYGRASS: 23,
-    RUIN_BRICK: 24, SKY_BRICK: 25, DDOOR: 26, BOSS_ALTAR: 27, CHEST: 28, CHEST_OPEN: 29 };
+    RUIN_BRICK: 24, SKY_BRICK: 25, DDOOR: 26, BOSS_ALTAR: 27, CHEST: 28, CHEST_OPEN: 29,
+    RICE0: 30, RICE1: 31, RICE2: 32, CARROT0: 33, CARROT1: 34, CARROT2: 35, PHOTOBOARD: 36 };
 
   // solid: ぶつかるか / terrain: 地形として縁取りするか / hard: 素手で掘る秒数
   // tool: 速く掘れる道具 / needTool: その道具がないと掘れない / drop: 掘ると手に入るアイテム
@@ -47,6 +48,11 @@
   RS.TILES[T.BOSS_ALTAR] = { name: 'ボスの祭壇', solid: false, hard: Infinity, color: '#b5543f', unbreakable: true };
   RS.TILES[T.CHEST] = { name: '宝箱', solid: false, hard: Infinity, color: '#c89560', unbreakable: true };
   RS.TILES[T.CHEST_OPEN] = { name: 'あいた宝箱', solid: false, hard: 1.0, tool: 'axe', drop: 'planks', color: '#c89560' };
+  // 畑の作物（3 だんかい）。こわすと、たねにもどる
+  for (const [base, name, seed] of [[T.RICE0, 'いね', 'rice_seed'], [T.CARROT0, 'にんじん', 'carrot_seed']]) {
+    for (let i = 0; i < 3; i++) RS.TILES[base + i] = { name: name + (i === 2 ? '（みのった）' : '（そだち中）'), solid: false, hard: 0.1, tool: null, drop: seed, color: i === 2 ? '#e9cf8a' : '#a5d47f', crop: true };
+  }
+  RS.TILES[T.PHOTOBOARD] = { name: '掲示板', solid: false, hard: 1.0, tool: 'axe', drop: 'photoboard', color: '#c89560' };
   RS.TILES[T.FURNACE] = { name: 'かまど', solid: false, hard: 1.4, tool: 'pickaxe', drop: 'furnace', color: '#9a9aa6', utensil: true };
   // 傘の台座（こわせない）。近くで X を押すと傘の画面
   RS.TILES[T.ALTAR] = { name: '傘の台座', solid: false, hard: Infinity, tool: null, drop: null, color: '#f4ead8', unbreakable: true };
@@ -83,6 +89,14 @@
     copper_ingot:  { name: '銅のインゴット' },
     skystone:      { name: 'そらいし' },
     cotton:        { name: 'ふわふわわた' },
+    // 農業・畜産
+    rice_seed:     { name: 'いねのたね', place: T.RICE0, needsSoil: true, crop: 'rice' },
+    carrot_seed:   { name: 'にんじんのたね', place: T.CARROT0, needsSoil: true, crop: 'carrot' },
+    rice:          { name: '米' },
+    carrot:        { name: 'にんじん', food: { kind: 'eat', amount: 10, motion: 'bite', dur: 6, look: { main: '#f3a35b' } } },
+    egg:           { name: 'たまご' },
+    milk:          { name: 'ミルク', food: { kind: 'drink', amount: 12, motion: 'cup', dur: 6, look: { main: '#fffaf0' } }, max: 10 },
+    photoboard:    { name: '掲示板', place: T.PHOTOBOARD },
     // ボス
     bell:          { name: 'しずくの鈴', summon: 'oshizuku' },
     bigdrop:       { name: 'おおしずくのしずく' },
@@ -122,6 +136,7 @@
   RS.RECIPES.push({ out: 'cup', n: 2, table: true, in: ['planks', 'stick'] });
   RS.RECIPES.push({ out: 'pot', n: 1, table: true, in: ['stone', 'stone', 'stone', 'stone'] });
   RS.RECIPES.push({ out: 'pan', n: 1, table: true, in: ['stone', 'stone', 'planks'] });
+  RS.RECIPES.push({ out: 'photoboard', n: 1, table: true, in: ['planks', 'planks', 'planks', 'log'] });
   RS.RECIPES.push({ out: 'bell', n: 1, table: true, in: ['jelly', 'jelly', 'jelly', 'copper_ingot'] });
   RS.RECIPES.push({ out: 'furnace', n: 1, table: true, in: ['stone', 'stone', 'stone', 'log'] });
   for (const r of RS.RECIPES) r.key = [...r.in].sort().join('|');

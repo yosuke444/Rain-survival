@@ -31,6 +31,9 @@
       umbLevel: game.world.umb.level,
       prog: game.prog,
       dungeons: game.dungeons,
+      crops: w.crops,
+      boards: w.boards,
+      animals: game.animals.map((a) => ({ type: a.type, x: a.x, y: a.y, ready: a.ready })),
     };
   };
 
@@ -64,6 +67,9 @@
     if (d.clock != null) game.clock = d.clock;
     if (d.umbLevel) { w.setUmbrella(d.umbLevel); w.umb.dispR = w.umb.R; }
     if (d.dungeons) game.dungeons = Object.assign(game.dungeons, d.dungeons);
+    w.crops = d.crops || [];
+    w.boards = d.boards || {};
+    game.animals = (d.animals || []).filter((a) => RS.farm.ANIMALS[a.type]).map((a) => { const an = new RS.farm.Animal(a.type, a.x, a.y); an.ready = a.ready || 0; return an; });
     if (d.prog) game.prog = Object.assign({ cp: 0, delivered: {}, seen: {}, dishes: {}, cleared: false }, d.prog);
     if (p.collides(w, p.x, p.y)) game.spawn();
     game.cam.x = p.cx(); game.cam.y = p.cy() - 2;

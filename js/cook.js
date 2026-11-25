@@ -21,6 +21,10 @@
     water:    { cats: ['water'], color: '#bfe3f7', eff: 'jump', val: 6 },
     jelly:    { cats: ['sweet'], color: '#8fc4ea', eff: 'guard', val: 14 },
     skyfruit: { cats: ['fruit'], color: '#c9b8f0', eff: 'jump', val: 14 },
+    rice:     { cats: ['grain'], color: '#fff8ea', eff: 'full', val: 16 },
+    carrot:   { cats: ['veg'], color: '#f3a35b', eff: 'regen', val: 12 },
+    egg:      { cats: ['egg'], color: '#f7d978', eff: 'guard', val: 14 },
+    milk:     { cats: ['water'], color: '#fffaf0', eff: 'regen', val: 10 },
   };
 
   // 調理器具（tier：1 = かんたん、2 = 手の込んだ）
@@ -40,12 +44,14 @@
     { tool: 'board', slots: [['fruit'], ['water']], name: (a) => a[0] + 'ジュース', vessel: 'straw', motion: 'straw', kind: 'drink', hint: '果物＋水 → ジュース' },
     { tool: 'board', slots: [['fruit'], ['fruit']], name: (a) => (a[0] === a[1] ? a[0] + 'もり' : a[0] + 'と' + a[1] + 'のフルーツもり'), vessel: 'plate', motion: 'steak', hint: '果物＋果物 → フルーツもり' },
     { tool: 'board', slots: [['fruit'], ['sweet']], name: (a) => a[0] + 'ゼリー', vessel: 'plate', motion: 'steak', hint: '果物＋甘味 → 〇〇ゼリー' },
-    { tool: 'board', slots: [['egg'], ['grain']], name: () => 'たまごかけごはん', vessel: 'bowl', motion: 'bowl', hint: '卵＋米 → たまごかけごはん' },
+    { tool: 'board', slots: [['grain'], ['egg']], name: () => 'たまごかけごはん', vessel: 'bowl', motion: 'bowl', hint: '卵＋米 → たまごかけごはん' },
     { tool: 'pot', slots: [['veg', 'mushroom', 'meat'], ['water']], name: (a) => a[0] + 'のスープ', vessel: 'bowl', motion: 'bowl', hint: '野菜/きのこ/肉＋水 → スープ' },
     { tool: 'pot', slots: [['herb'], ['water']], name: (a) => a[0] + 'ティー', vessel: 'cup', motion: 'cup', kind: 'drink', hint: 'ハーブ＋水 → ティー' },
     { tool: 'pot', slots: [['fruit'], ['water']], name: (a) => a[0] + 'のコンポート', vessel: 'bowl', motion: 'bowl', hint: '果物＋水 → コンポート' },
     { tool: 'pan', slots: [['veg', 'mushroom', 'meat', 'egg'], ['veg', 'mushroom', 'meat', 'egg']], name: (a) => (a[0] === a[1] ? a[0] + 'いため' : a[0] + 'と' + a[1] + 'のいため'), vessel: 'plate', motion: 'steak', hint: '野菜/きのこ/肉/卵 ×2 → いため' },
     { tool: 'pan', slots: [['fruit']], name: (a) => a[0] + 'のソテー', vessel: 'plate', motion: 'steak', hint: '果物 → ソテー' },
+    { tool: 'pot', slots: [['grain'], ['water']], name: (a) => (a[0] === '米' ? 'ごはん' : a[0] + 'がゆ'), vessel: 'bowl', motion: 'bowl', hint: '米＋水 → ごはん' },
+    { tool: 'pan', slots: [['grain'], ['egg', 'veg', 'mushroom', 'meat']], name: (a) => a[1] + 'チャーハン', vessel: 'plate', motion: 'steak', hint: '米＋卵/野菜/きのこ/肉 → チャーハン' },
   ];
   CK.hints = (toolId) => (toolId === 'furnace' ? ['鉱石＋木 → インゴット'] : RS.DISHES.filter((d) => d.tool === toolId).map((d) => d.hint));
 
