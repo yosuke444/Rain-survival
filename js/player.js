@@ -26,12 +26,12 @@
     }
 
     physics(dt, w, move, jump) {
-      const target = move * C.MOVE_SPEED;
+      const target = move * C.MOVE_SPEED * (this.spdMul || 1); // spdMul：特殊効果の倍率
       const acc = (this.onGround ? C.ACCEL_GROUND : C.ACCEL_AIR) * dt;
       this.vx += RS.clamp(target - this.vx, -acc, acc);
       if (move) this.face = move > 0 ? 1 : -1;
 
-      if (jump && this.onGround) { this.vy = -C.JUMP_SPEED; this.onGround = false; }
+      if (jump && this.onGround) { this.vy = -C.JUMP_SPEED * (this.jmpMul || 1); this.onGround = false; }
       let g = C.GRAVITY;
       if (!jump && this.vy < 0) g *= 2.2; // ボタンを早く離すと低いジャンプ
       this.vy = Math.min(this.vy + g * dt, C.MAX_FALL);

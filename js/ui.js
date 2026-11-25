@@ -112,7 +112,20 @@
       ui.text(g, name, px + 8, cy, lab);
       bar(g, px + 10 + labW, cy - L.barH / 2, L.barW, L.barH, frac, color, seed);
     });
-    if (p.food <= 0) ui.text(g, 'おなかぺこぺこ：ダメージ増', px + 8, py + rowH * 2 + 24, lab * 0.85, { color: '#b5543f', outline: COL.cream });
+    let ly = py + rowH * 2 + 24;
+    if (p.food <= 0) { ui.text(g, 'おなかぺこぺこ：ダメージ増', px + 8, ly, lab * 0.85, { color: '#b5543f', outline: COL.cream }); ly += lab * 1.2; }
+    // 食事中のすすみぐあい
+    if (game.eating) {
+      const f = game.eating.food, k = RS.meal.progress(game);
+      ui.text(g, (f.kind === 'drink' ? 'ごくごく…' : 'もぐもぐ…') + Math.floor(k * 100) + '%', px + 8, ly, lab * 0.9, { outline: COL.cream });
+      ly += lab * 1.2;
+    }
+    // 特殊効果（のこり時間）
+    for (const e of game.effects) {
+      const m = Math.floor(e.t / 60), sec = Math.floor(e.t % 60);
+      ui.text(g, '✦ ' + RS.EFFECTS[e.id].name + '　' + m + ':' + String(sec).padStart(2, '0'), px + 8, ly, lab * 0.85, { color: '#8a5a8c', outline: COL.cream });
+      ly += lab * 1.15;
+    }
 
     // モード切替ボタン
     const m = L.mode;

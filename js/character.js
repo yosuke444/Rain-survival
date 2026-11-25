@@ -453,7 +453,7 @@
     g.rotate(-A.e);
     seg(g, u, 0.11, 0.11, c, seed + 1);
     g.translate(0, 0.13 * u);
-    if (held) held(g);
+    if (held) held(g, u, A.a + A.e); // 3つめの値：手の回転（打ち消すと小物がまっすぐ立つ）
     X.ellipse(g, 0, 0, 0.065 * u, 0.065 * u, o(u, seed + 2, { fill: look.face.color, n: 10 }));
     g.restore();
   }
@@ -465,7 +465,7 @@
     const b = pose.bob;
     g.save();
     g.translate(0, pose.dy * u);
-    arm(g, u, look, -0.15, -0.72 + b, pose.armB, 71, true, null);
+    arm(g, u, look, -0.15, -0.72 + b, pose.armB, 71, true, pose.heldB || null);
     leg(g, u, look, -0.07, -0.3, pose.legB, 81, true);
     leg(g, u, look, 0.07, -0.3, pose.legF, 85, false);
     g.save();
@@ -500,6 +500,7 @@
     if (HEADS[look.head.type]) HEADS[look.head.type](g, u, look.head.color);
     g.restore();
     if (acc && acc.layer === 'body') { g.save(); g.translate(0, b * u); acc.draw(g, u, look.acc.color); g.restore(); }
+    if (pose.prop) pose.prop(g, u); // 目の前の小物（お皿など）
     arm(g, u, look, 0.13, -0.72 + b, pose.armF, 75, false, held);
     g.restore();
   };

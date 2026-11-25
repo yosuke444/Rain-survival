@@ -33,7 +33,7 @@
     table:   { name: 'クラフトテーブル', place: T.TABLE },
     sapling: { name: '苗木', place: T.SAPLING, needsSoil: true },
     stick:   { name: '棒' },
-    apple:   { name: 'りんご', food: true },
+    apple:   { name: 'りんご', food: { kind: 'eat', amount: 25, motion: 'bite', dur: 8, look: { main: '#ee8577' } } },
     chair:   { name: '木のいす', place: T.CHAIR_R, chair: true },
   };
 

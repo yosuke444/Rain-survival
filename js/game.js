@@ -37,6 +37,7 @@
       this.cam.x = this.player.cx(); this.cam.y = this.player.cy() - 2;
       // ワールドの保存（タイトルの背景のワールドは保存しない）
       this.worldId = null; this.worldName = ''; this.worldCreated = 0;
+      this.effects = []; this.eating = null; // 特殊効果・食事中
       this.saveT = 0; this.savedT = 0;
       const saveNow = () => RS.save.saveCurrent(this, true);
       document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
@@ -98,6 +99,7 @@
       this.mine = { key: null, t: 0, need: 1, x: 0, y: 0 };
       this.target = null; this.state = 'play'; this.exposed = false;
       this.time = 0; this.saveT = 0;
+      this.effects = []; this.eating = null;
       this.spawn();
       this.cam.x = this.player.cx(); this.cam.y = this.player.cy() - 2;
     }
@@ -188,7 +190,10 @@
       }
       // いすに座る（↓）・立つ（←→↑）
       if (playing) this.updateSit(useHeld);
+      if (playing) RS.meal.update(this, dt);
       if (p.sitting) { move = 0; jump = false; p.vx = 0; p.vy = 0; }
+      if (this.eating) { move = 0; jump = false; }
+      p.spdMul = RS.meal.mult(this, 'speed'); p.jmpMul = RS.meal.mult(this, 'jump');
       if (this.state !== 'dead' && !p.sitting) {
         let rem = dt;
         while (rem > 0) { const h = Math.min(rem, 1 / 60); p.physics(h, this.world, move, jump); rem -= h; }
@@ -343,6 +348,7 @@
       return false;
     }
     openMenu() {
+      if (this.eating) RS.meal.cancel(this);
       this.menu.size = this.nearTable() ? 3 : 2;
       this.state = 'menu';
       this.showTouch();
@@ -382,12 +388,14 @@
         return;
       }
       p.foodT += dt;
-      if (p.foodT >= C.FOOD_DECAY_SEC) { p.foodT -= C.FOOD_DECAY_SEC; p.food = Math.max(0, p.food - 1); }
+      const decay = C.FOOD_DECAY_SEC / RS.meal.mult(this, 'full');
+      if (p.foodT >= decay) { p.foodT -= decay; p.food = Math.max(0, p.food - 1); }
       if (p.food > 0 && p.hp < C.HP_MAX) {
         p.regenT += dt;
-        if (p.regenT >= C.HP_REGEN_SEC) { p.regenT = 0; p.hp = Math.min(C.HP_MAX, p.hp + 1); }
+        if (p.regenT >= C.HP_REGEN_SEC / RS.meal.mult(this, 'regen')) { p.regenT = 0; p.hp = Math.min(C.HP_MAX, p.hp + 1); }
       }
       p.hurtT = Math.max(0, p.hurtT - dt);
+      RS.meal.updateEffects(this, dt);
 
       const wasExposed = this.exposed;
       this.exposed = !this.world.isProtected(p.cx(), p.y + 0.1);
@@ -399,7 +407,8 @@
     }
     damage(n) {
       const p = this.player;
-      const mult = p.food <= 0 ? C.STARVING_DAMAGE_MULT : 1;
+      const mult = (p.food <= 0 ? C.STARVING_DAMAGE_MULT : 1) * RS.meal.mult(this, 'guard');
+      if (this.eating) RS.meal.cancel(this, 'ダメージを受けたため。食べ物はそのまま');
       const d = Math.round(n * mult);
       p.hp -= d;
       p.hurtT = 0.4;
@@ -426,7 +435,8 @@
       this.target = this.computeTarget(def, useHeld);
       p.swinging = false;
 
-      if (def && def.food) { this.mine.key = null; if (usePressed) { this.eat(); this.mineLock = true; } return; }
+      if (this.eating) { this.mine.key = null; return; }
+      if (def && def.food) { this.mine.key = null; if (usePressed) { RS.meal.start(this); this.mineLock = true; } return; }
 
       if (def && def.place != null) {
         this.mine.key = null;
@@ -470,7 +480,7 @@
       const td = RS.TILES[tile];
       const right = !!(def && def.tool && def.tool === td.tool);
       if (td.needTool && !right) return { ok: false, msg: td.name + 'を ほるには ツルハシが ひつよう' };
-      const mult = right ? C.TOOL_MULT[def.tier] : 1;
+      const mult = (right ? C.TOOL_MULT[def.tier] : 1) * RS.meal.mult(this, 'mine');
       return { ok: true, time: td.hard / mult };
     }
 
@@ -509,15 +519,6 @@
         this.world.saplings.push({ x, y, t: C.SAPLING_GROW_MIN + Math.random() * (C.SAPLING_GROW_MAX - C.SAPLING_GROW_MIN) });
       }
       this.burst(x + 0.5, y + 0.5, RS.TILES[def.place].color, 4);
-    }
-
-    eat() {
-      const p = this.player;
-      if (p.food >= C.FOOD_MAX) { this.toast('おなかは いっぱい'); return; }
-      p.food = Math.min(C.FOOD_MAX, p.food + C.APPLE_FOOD);
-      this.inv.consumeHeld(1);
-      p.swingT = 0.25;
-      this.floater(p.cx(), p.y - 0.2, 'おなか +' + C.APPLE_FOOD);
     }
 
     // ---------------- ねらう場所 ----------------
@@ -840,6 +841,7 @@
       if (p.swinging) pose.armF = { a: 1.6 + 0.9 * Math.cos(t * 14), e: 0.2 };
       else if (p.swingT > 0) pose.armF = { a: 0.4 + (p.swingT / 0.25) * 1.2, e: 0.3 };
       if ((t % 3.7) < 0.13) pose.eyes = 'blink'; // まばたき
+      RS.meal.pose(this, pose); // 食事中のモーション
       if (p.hurtT > 0) { pose.eyes = 'squeeze'; pose.mouth = 'open'; }
       return pose;
     }
@@ -849,7 +851,8 @@
       const p = this.player, Tp = this.T;
       const fx = this.ox() + p.cx() * Tp, fy = this.oy() + (p.y + p.h) * Tp;
       const held = this.inv.held();
-      const drawHeld = held ? (hg) => {
+      const pose = this.playerPose();
+      const invHeld = held ? (hg) => {
         const it = RS.ITEMS[held.id];
         const big = !!(it.tool || held.id === 'stick');
         const sz = Tp * (big ? 0.7 : 0.42);
@@ -858,11 +861,12 @@
         else hg.drawImage(RS.art.icons[held.id], -sz / 2, -sz * 0.15, sz, sz);
         hg.restore();
       } : null;
+      const drawHeld = this.eating ? pose.heldF || null : invHeld;
       g.save();
       g.translate(Math.round(fx), Math.round(fy));
       g.scale(p.face, 1);
       if (p.hurtT > 0 && Math.floor(p.hurtT * 20) % 2) g.globalAlpha = 0.5;
-      RS.char.draw(g, Tp, this.look, this.playerPose(), drawHeld, this.time);
+      RS.char.draw(g, Tp, this.look, pose, drawHeld, this.time);
       g.restore();
     }
 

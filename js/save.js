@@ -26,6 +26,7 @@
       player: { x: p.x, y: p.y, hp: Math.max(1, p.hp), food: p.food, face: p.face },
       inv: { slots: inv.slots, craft: inv.craft, cursor: inv.cursor, sel: inv.sel },
       time: game.time,
+      effects: game.effects.map((e) => ({ id: e.id, t: e.t })),
     };
   };
 
@@ -55,6 +56,7 @@
     const inv = game.inv;
     if (d.inv) { inv.slots = d.inv.slots; inv.craft = d.inv.craft || new Array(9).fill(null); inv.cursor = d.inv.cursor || null; inv.sel = d.inv.sel || 0; }
     game.time = d.time || 0;
+    game.effects = (d.effects || []).filter((e) => RS.EFFECTS[e.id]);
     if (p.collides(w, p.x, p.y)) game.spawn();
     game.cam.x = p.cx(); game.cam.y = p.cy() - 2;
   };
