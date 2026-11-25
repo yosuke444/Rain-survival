@@ -208,27 +208,34 @@
   // ---------------- メニュー（インベントリ・クラフト） ----------------
   ui.menuLayout = function (game) {
     const W = game.W, H = game.H, size = game.menu.size;
-    const key = W + 'x' + H + ':' + size;
+    const recipes = RS.recipes.list(game);
+    const key = W + 'x' + H + ':' + size + ':' + recipes.length + ':' + (game.menu.rpage || 0);
     const rows = typeof size === 'number' ? size : 1; // 調理器具は1列（3つの枠）
     const cols = typeof size === 'number' ? size : 3;
-    if (ui._ml && ui._ml.key === key) return ui._ml;
+    if (ui._ml && ui._ml.key === key) { ui._ml.recipes = recipes; return ui._ml; }
     const rowsH = 0.8 + Math.max(rows, 2) + 0.5 + 3 + 0.3 + 1 + 0.9 + 0.5;
-    const s = Math.floor(RS.clamp(Math.min((W - 20) / 9.8, (H - 16) / rowsH), 24, 58));
-    const pw = 9.8 * s, ph = rowsH * s;
+    // 横長の画面：レシピ一覧を左に。縦長（スマホ縦）：持ち物の下に
+    const side = W > H * 0.9;
+    const RW = 4.6; // 左のレシピ欄の幅（スロット何こ分）
+    const s = side
+      ? Math.floor(RS.clamp(Math.min((W - 20) / (9.8 + RW), (H - 16) / rowsH), 24, 58))
+      : Math.floor(RS.clamp(Math.min((W - 20) / 9.8, (H - 16) / (rowsH + 4.2)), 22, 58));
+    const mainW = 9.8 * s, pw = side ? mainW + RW * s : mainW, ph = side ? rowsH * s : (rowsH + 4.2) * s;
     const px = Math.round((W - pw) / 2), py = Math.round((H - ph) / 2);
-    const L = { key, s, size, panel: { x: px, y: py, w: pw, h: ph }, slots: [] };
-    const left = px + 0.4 * s;
+    const mx = side ? px + RW * s : px; // 右側（いつもの持ち物）の左はし
+    const L = { key, s, size, panel: { x: px, y: py, w: pw, h: ph }, slots: [], recipes, side, mx };
+    const left = mx + 0.4 * s;
 
     // クラフト枠
     const cw = cols * s + 1.3 * s + s;
-    const cx = px + (pw - cw) / 2, cy = py + 0.8 * s;
+    const cx = mx + (mainW - cw) / 2, cy = py + 0.8 * s;
     for (const i of RS.Inventory.gridOf(size)) {
       L.slots.push({ ref: { k: 'craft', i }, x: cx + (i % 3) * s, y: cy + Math.floor(i / 3) * s, s });
     }
     const rx = cx + cols * s + 1.3 * s, ry = cy + (rows * s - s) / 2;
     L.slots.push({ ref: { k: 'result' }, x: rx, y: ry, s });
     L.arrow = { x0: cx + cols * s + 0.2 * s, x1: rx - 0.2 * s, y: ry + s / 2 };
-    L.hintY = cy + rows * s + s * 0.35; // 調理器具：作れるもののヒント
+    L.hintY = cy + Math.max(rows, 2) * s + s * 0.2; // プレビュー（たりない物）
 
     // インベントリ 9x3
     const iy = cy + Math.max(rows, 2) * s + 0.5 * s;
@@ -240,8 +247,26 @@
     const hy = iy + 3 * s + 0.3 * s;
     L.hotY = hy;
     for (let i = 0; i < 9; i++) L.slots.push({ ref: { k: 'inv', i }, x: left + i * s, y: hy, s });
-
     L.helpY = hy + s + 0.5 * s;
+
+    // レシピ一覧
+    let rcx, rcy, rcols, rrows;
+    if (side) { rcx = px + 0.4 * s; rcy = py + 1.2 * s; rcols = 4; rrows = Math.floor((ph - 2.2 * s) / s); }
+    else { rcx = left; rcy = L.helpY + 1.0 * s; rcols = 9; rrows = 2; }
+    L.rtitle = { x: rcx, y: rcy - 0.45 * s };
+    const per = rcols * rrows;
+    const pages = Math.max(1, Math.ceil(recipes.length / per));
+    game.menu.rpage = Math.min(game.menu.rpage || 0, pages - 1);
+    const p0 = game.menu.rpage * per;
+    for (let k = 0; k < per && p0 + k < recipes.length; k++) {
+      L.slots.push({ ref: { k: 'recipe', i: p0 + k }, x: rcx + (k % rcols) * s, y: rcy + Math.floor(k / rcols) * s, s });
+    }
+    if (pages > 1) {
+      const by = rcy + rrows * s + 0.1 * s;
+      L.slots.push({ ref: { k: 'rpage', d: -1 }, x: rcx, y: by, s: s * 0.8 });
+      L.slots.push({ ref: { k: 'rpage', d: 1 }, x: rcx + (rcols - 1) * s, y: by, s: s * 0.8 });
+      L.rpages = { cur: game.menu.rpage + 1, n: pages, x: rcx + rcols * s / 2, y: by + s * 0.4 };
+    }
     L.close = { x: px + pw - 0.95 * s, y: py + 0.15 * s, w: 0.8 * s, h: 0.8 * s };
     ui._ml = L;
     return L;
@@ -280,8 +305,13 @@
 
     // タイトル
     const ut = typeof L.size === 'string' ? RS.UTENSILS[Number(L.size.slice(2))] : null;
-    ui.text(g, ut ? ut.name + (ut.tier >= 2 ? '（手の込んだ料理）' : '') : L.size === 3 ? 'クラフトテーブル' : 'もちもの', P.x + 0.45 * s, P.y + 0.45 * s, s * 0.42, { maxW: P.w * 0.5 });
-    if (ut) ui.text(g, '作れるもの：' + RS.cook.hints(ut.id).join(' ／ '), P.x + P.w / 2, L.hintY, s * 0.27, { align: 'center', maxW: P.w - s * 0.6, color: 'rgba(107,74,47,0.85)' });
+    ui.text(g, ut ? ut.name + (ut.tier >= 2 ? '（手の込んだ料理）' : '') : L.size === 3 ? 'クラフトテーブル' : 'もちもの', L.mx + 0.45 * s, P.y + 0.45 * s, s * 0.42, { maxW: P.w * 0.4 });
+    // レシピ一覧の見出し
+    ui.text(g, ut ? '作れる料理' : 'レシピ', L.rtitle.x, L.rtitle.y, s * 0.36);
+    if (L.rpages) ui.text(g, L.rpages.cur + ' / ' + L.rpages.n, L.rpages.x, L.rpages.y, s * 0.3, { align: 'center' });
+    // プレビュー（作れないレシピをえらんだとき）
+    const pv = game.menu.preview;
+    if (pv && pv.missing.length) ui.text(g, 'たりない：' + pv.missing.join('、'), (L.arrow.x0 + L.arrow.x1) / 2, L.hintY, s * 0.28, { align: 'center', color: '#b5543f', maxW: P.w * (L.side ? 0.6 : 0.95) });
 
     // とじるボタン
     const c = L.close;
@@ -298,10 +328,29 @@
 
     const recipe = inv.match(L.size);
     const kbd = game.mode === 'auto';
+    const grid = RS.Inventory.gridOf(L.size);
     L.slots.forEach((sl, i) => {
       let stack = null, alpha = null;
+      if (sl.ref.k === 'recipe') { // レシピ一覧のマス：作れない物はうすく
+        const e = L.recipes[sl.ref.i];
+        ui.drawSlot(g, sl.x, sl.y, s, null, { hl: kbd && i === game.menu.cursor, sel: game.menu.recipeSel === sl.ref.i, seed: 100 + i });
+        ui.drawStack(g, sl.x, sl.y, s, { id: e.stack.id, n: 1, data: e.stack.data }, e.ok ? 1 : 0.35);
+        if (e.ok) { g.fillStyle = '#5e9c62'; g.beginPath(); g.arc(sl.x + s * 0.82, sl.y + s * 0.2, s * 0.08, 0, Math.PI * 2); g.fill(); }
+        else if (e.goal) ui.text(g, '★', sl.x + s * 0.8, sl.y + s * 0.22, s * 0.26, { align: 'center', color: '#f3b65b' });
+        return;
+      }
+      if (sl.ref.k === 'rpage') {
+        ui.drawSlot(g, sl.x, sl.y, sl.s, null, { hl: kbd && i === game.menu.cursor, seed: 100 + i });
+        ui.text(g, sl.ref.d < 0 ? '◀' : '▶', sl.x + sl.s / 2, sl.y + sl.s / 2, sl.s * 0.45, { align: 'center' });
+        return;
+      }
       if (sl.ref.k === 'result') { if (recipe) { stack = { id: recipe.out, n: recipe.n, data: recipe.data }; } }
       else stack = inv.get(sl.ref);
+      // プレビュー：空いているクラフト枠に材料の見本をうすく
+      if (!stack && sl.ref.k === 'craft' && pv && pv.ids.length) {
+        const k = grid.indexOf(sl.ref.i);
+        if (k >= 0 && k < pv.ids.length) { ui.drawSlot(g, sl.x, sl.y, s, { id: pv.ids[k], n: 1 }, { seed: 100 + i, alpha: 0.35 }); return; }
+      }
       const sel = sl.ref.k === 'inv' && sl.ref.i === inv.sel;
       ui.drawSlot(g, sl.x, sl.y, s, stack, { sel, hl: kbd && i === game.menu.cursor, seed: 100 + i, alpha });
     });
@@ -313,8 +362,13 @@
     else if (game.menu.lastPtr) focus = ui.slotAt(L, game.menu.lastPtr.x, game.menu.lastPtr.y);
     const fs = L.slots[focus];
     if (fs) {
-      const st = fs.ref.k === 'result' ? (recipe ? { id: recipe.out, data: recipe.data } : null) : inv.get(fs.ref);
-      if (st) ui.text(g, RS.itemName(st), P.x + P.w - 1.2 * s, P.y + 0.45 * s, s * 0.34, { align: 'right', maxW: P.w * 0.45 });
+      let label = null;
+      if (fs.ref.k === 'recipe') { const e = L.recipes[fs.ref.i]; label = e.name + (e.ok ? '（作れる）' : e.table ? '（テーブルで作れる）' : '（材料がたりない）'); }
+      else if (fs.ref.k !== 'rpage') {
+        const st = fs.ref.k === 'result' ? (recipe ? { id: recipe.out, data: recipe.data } : null) : inv.get(fs.ref);
+        if (st) label = RS.itemName(st);
+      }
+      if (label) ui.text(g, label, P.x + P.w - 1.2 * s, P.y + 0.45 * s, s * 0.34, { align: 'right', maxW: P.w * 0.55 });
     }
 
     // 操作の説明

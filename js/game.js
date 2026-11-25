@@ -301,21 +301,27 @@
 
         if (this.state === 'menu') {
           const L = RS.ui.menuLayout(this);
+          if (mouse && this.mode !== 'mouse' && !(e.type === 'down' && RS.ui.inRect(L.close, e.x, e.y))) continue; // オートモードではキーボードで操作
+          const i = RS.ui.slotAt(L, e.x, e.y);
+          const isSlot = i >= 0 && ['inv', 'craft'].includes(L.slots[i].ref.k);
           if (e.type === 'down') {
             if (RS.ui.inRect(L.close, e.x, e.y)) { this.closeMenu(); continue; }
-            if (mouse) {
-              if (this.mode !== 'mouse') continue; // オートモードではキーボードで操作
-              const i = RS.ui.slotAt(L, e.x, e.y);
-              if (i < 0) continue;
-              this.menu.cursor = i;
-              this.inv.click(L.slots[i].ref, e.button === 2, this.menu.size);
-            } else {
-              this.menu.lastPtr = { x: e.x, y: e.y };
-            }
-          } else if ((e.type === 'up' && !mouse && !e.long) || e.type === 'long') {
-            const i = RS.ui.slotAt(L, e.x, e.y);
-            this.menu.lastPtr = { x: e.x, y: e.y };
-            if (i >= 0) { this.menu.cursor = i; this.inv.click(L.slots[i].ref, e.type === 'long', this.menu.size); }
+            if (!mouse) this.menu.lastPtr = { x: e.x, y: e.y };
+            if (i < 0) continue;
+            this.menu.cursor = i;
+            // つかんでいる物があれば、なぞって置く（動かさずに離したら、ふつうに置く）
+            if (this.inv.cursor && isSlot && (!mouse || e.button === 0)) { this.menu.drag = { id: e.id, start: i, seen: new Set([i]), moved: false }; continue; }
+            if (mouse) this.menuClick(L, i, e.button === 2);
+          } else if (e.type === 'long') {
+            const d = this.menu.drag;
+            if (d && d.id === e.id && !d.moved) { this.menuClick(L, d.start, true); d.moved = true; }
+            else if (!d && i >= 0) { this.menu.cursor = i; this.menuClick(L, i, true); }
+          } else if (e.type === 'up') {
+            const d = this.menu.drag;
+            this.menu.drag = null;
+            if (!mouse) this.menu.lastPtr = { x: e.x, y: e.y };
+            if (d && d.id === e.id) { if (!d.moved) this.menuClick(L, d.start, false); continue; }
+            if (!mouse && !e.long && i >= 0) { this.menu.cursor = i; this.menuClick(L, i, false); }
           }
           continue;
         }
@@ -367,6 +373,7 @@
     }
     openMenu() {
       if (this.eating) RS.meal.cancel(this);
+      this.menu.preview = null; this.menu.recipeSel = null; this.menu.rpage = 0; this.menu.drag = null;
       this.menu.size = this.nearStation();
       this.state = 'menu';
       this.showTouch();
@@ -380,8 +387,34 @@
       this.state = 'play';
       this.showTouch();
     }
+    // メニューのマスを押したとき（レシピ一覧・ページ送り・持ち物）
+    menuClick(L, i, secondary) {
+      const ref = L.slots[i].ref;
+      if (ref.k === 'recipe') { this.menu.recipeSel = ref.i; RS.recipes.select(this, L.recipes[ref.i]); return; }
+      if (ref.k === 'rpage') { this.menu.rpage = Math.max(0, (this.menu.rpage || 0) + ref.d); return; }
+      this.menu.preview = null;
+      this.inv.click(ref, secondary, this.menu.size);
+    }
+    // なぞって置く：押したまま別のマスに入ったら、そのマスに 1 こ置く
+    updateMenuDrag() {
+      const d = this.menu.drag;
+      if (!d) return;
+      const p = this.input.ptrs.get(d.id);
+      if (!p) { this.menu.drag = null; return; }
+      const L = RS.ui.menuLayout(this);
+      const i = RS.ui.slotAt(L, p.x, p.y);
+      this.menu.lastPtr = { x: p.x, y: p.y };
+      if (i < 0 || d.seen.has(i) || !['inv', 'craft'].includes(L.slots[i].ref.k)) return;
+      if (!this.inv.cursor) return;
+      if (!d.moved) { this.menuClick(L, d.start, true); d.moved = true; }
+      d.seen.add(i);
+      if (this.inv.cursor) this.menuClick(L, i, true);
+      this.menu.cursor = i;
+    }
+
     updateMenuKeys() {
       const inp = this.input;
+      this.updateMenuDrag();
       if (inp.pressed('menu')) { this.closeMenu(); return; }
       if (this.mode !== 'auto') return;
       const L = RS.ui.menuLayout(this);
@@ -389,8 +422,8 @@
       for (const k in dirs) if (inp.pressed(k)) this.menu.cursor = RS.ui.navigate(L, this.menu.cursor, dirs[k]);
       const sl = L.slots[this.menu.cursor];
       if (!sl) return;
-      if (inp.pressed('use')) this.inv.click(sl.ref, false, this.menu.size);
-      if (inp.pressed('one')) this.inv.click(sl.ref, true, this.menu.size);
+      if (inp.pressed('use')) this.menuClick(L, this.menu.cursor, false);
+      if (inp.pressed('one')) this.menuClick(L, this.menu.cursor, true);
     }
 
     // ---------------- 生存（体力・食料・酸性雨） ----------------
