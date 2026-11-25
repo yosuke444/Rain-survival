@@ -33,10 +33,17 @@
     return c;
   }
 
-  function shade(hex, k) {
-    const n = parseInt(hex.slice(1), 16);
-    const r = Math.round(((n >> 16) & 255) * k), g = Math.round(((n >> 8) & 255) * k), b = Math.round((n & 255) * k);
-    return `rgb(${r},${g},${b})`;
+  // 色を暗く（k < 1）・明るく（k > 1）する。'#rrggbb' と 'rgb(r,g,b)' のどちらも受け付ける
+  function shade(col, k) {
+    let r, g, b;
+    if (col[0] === '#') {
+      const n = parseInt(col.slice(1), 16);
+      r = (n >> 16) & 255; g = (n >> 8) & 255; b = n & 255;
+    } else {
+      [r, g, b] = col.match(/[\d.]+/g).map(Number);
+    }
+    const f = (v) => Math.max(0, Math.min(255, Math.round(v * k)));
+    return `rgb(${f(r)},${f(g)},${f(b)})`;
   }
   art.shade = shade;
 
