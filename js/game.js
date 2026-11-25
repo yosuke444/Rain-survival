@@ -38,6 +38,7 @@
       // ワールドの保存（タイトルの背景のワールドは保存しない）
       this.worldId = null; this.worldName = ''; this.worldCreated = 0;
       this.effects = []; this.eating = null; // 特殊効果・食事中
+      this.clock = C.DAY_SEC * 0.1; this.atkCd = 0; RS.enemy.reset(this); // 時刻・敵
       this.saveT = 0; this.savedT = 0;
       const saveNow = () => RS.save.saveCurrent(this, true);
       document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
@@ -100,6 +101,7 @@
       this.target = null; this.state = 'play'; this.exposed = false;
       this.time = 0; this.saveT = 0;
       this.effects = []; this.eating = null;
+      this.clock = C.DAY_SEC * 0.1; this.atkCd = 0; RS.enemy.reset(this);
       this.spawn();
       this.cam.x = this.player.cx(); this.cam.y = this.player.cy() - 2;
     }
@@ -199,6 +201,9 @@
         while (rem > 0) { const h = Math.min(rem, 1 / 60); p.physics(h, this.world, move, jump); rem -= h; }
       }
       p.walkT += Math.abs(p.vx) * dt;
+      this.clock += dt;
+      this.atkCd = Math.max(0, this.atkCd - dt);
+      RS.enemy.update(this, dt);
       p.swingT = Math.max(0, p.swingT - dt);
 
       if (playing) this.updateUse(dt, useHeld);
@@ -332,6 +337,10 @@
       }
       return false;
     }
+    aimWorld() {
+      const a = this.aimPoint();
+      return a ? { x: (a.x - this.ox()) / this.T, y: (a.y - this.oy()) / this.T } : null;
+    }
     aimPoint() {
       for (const p of this.input.ptrs.values()) if (!p.ui && p.ptype !== 'mouse') return p;
       return this.input.mouse.has ? this.input.mouse : null;
@@ -441,6 +450,14 @@
       p.swinging = false;
 
       if (this.eating) { this.mine.key = null; return; }
+      // 敵が近くにいれば、採掘より攻撃をさきに（設置・食べ物・コップを持っているときはしない）
+      const foe = (def && (def.food || def.place != null || def.fillWater)) ? null : RS.enemy.target(this, this.mode === 'mouse' ? this.aimWorld() : null);
+      this.foe = foe;
+      if (foe) {
+        this.mine.key = null;
+        if (useHeld && this.atkCd <= 0) { RS.enemy.hit(this, foe, RS.enemy.weaponDmg(def)); this.atkCd = C.ATTACK_CD; p.swingT = 0.25; }
+        return;
+      }
       if (def && def.food) { this.mine.key = null; if (usePressed) { RS.meal.start(this); this.mineLock = true; } return; }
       if (def && def.fillWater) { this.mine.key = null; if (usePressed) this.fillWater(); return; }
 
@@ -642,9 +659,11 @@
       this.rain.drawNormal(g, this);
       this.drawUmbrella(g);
       this.drawTerrain(g);
+      RS.enemy.draw(g, this);
       this.drawPlayer(g);
       this.rain.drawAcid(g, this);
       this.drawFx(g);
+      RS.enemy.drawNight(g, this);
       if (pm) { g.restore(); RS.pm.filter(g, this.W, this.H, pm.filter, this.canvas); }
       // ここまでがゲーム画面。写真・録画には UI と狙いの枠を写さない
       if (this.photoReq) this.takePhoto();
@@ -720,7 +739,7 @@
       for (let x = x0; x <= x1; x++) {
         const s = w.surface(x);
         for (let y = Math.max(y0, s + 1); y <= y1; y++) {
-          if (w.get(x, y) === T.AIR) g.rect(ox + x * Tp, oy + y * Tp, Tp, Tp);
+          if (!TL[w.get(x, y)].terrain) g.rect(ox + x * Tp, oy + y * Tp, Tp, Tp); // 地形以外（空気・きのこ・家具など）の後ろに壁
         }
       }
       g.fillStyle = COL.wall; g.fill();
@@ -772,6 +791,12 @@
     }
 
     drawTarget(g) {
+      if (this.foe && this.state === 'play' && !this.foe.gone) { // ねらっている敵
+        const e = this.foe, Tp = this.T;
+        S.ellipse(g, this.ox() + e.cx() * Tp, this.oy() + e.cy() * Tp, (e.w * 0.75) * Tp, (e.h * 0.75) * Tp,
+          { stroke: '#d9564f', lw: Math.max(2, Tp * 0.06), seed: 1201, amp: Tp * 0.02, step: Tp * 0.3 });
+        return;
+      }
       const t = this.target;
       if (!t || this.state !== 'play') return;
       const Tp = this.T, x = this.ox() + t.x * Tp, y = this.oy() + t.y * Tp;

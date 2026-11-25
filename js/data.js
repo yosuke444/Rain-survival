@@ -47,6 +47,7 @@
     berry:    { name: '野いちご', food: { kind: 'eat', amount: 10, motion: 'bite', dur: 5, look: { main: '#d9435a' } } },
     herb:     { name: '野草' },
     mushroom: { name: 'きのこ' },
+    jelly:    { name: 'しずくゼリー', food: { kind: 'eat', amount: 15, motion: 'bite', dur: 6, look: { main: '#8fc4ea' } } },
     water:    { name: '雨水', food: { kind: 'drink', amount: 8, motion: 'cup', dur: 6, look: { main: '#bfe3f7' } }, max: 10 },
     cup:      { name: 'からのコップ', fillWater: true, max: 10 },
     // 調理器具

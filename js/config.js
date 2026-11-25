@@ -72,6 +72,13 @@ RS.saveSettings = function (s) {
 };
 
 // ---- 録画 ----
+// ---- 昼夜と敵（仮） ----
+RS.CONFIG.DAY_SEC = 900;            // 1日の長さ（秒）。夜は 0.67〜0.95 のあいだ
+RS.CONFIG.NIGHT_ENEMY_MAX = 4;      // 夜の敵（しずくん）の最大数
+RS.CONFIG.CAVE_ENEMY_MAX = 3;       // 洞窟の敵（いしころん）の最大数
+RS.CONFIG.ENEMY_SPAWN_SEC = 3;      // 敵が出るか調べる間隔（秒）
+RS.CONFIG.ATTACK_REACH = 1.6;       // オートモードで攻撃が届く距離（マス）
+RS.CONFIG.ATTACK_CD = 0.35;         // 攻撃の間隔（秒）
 RS.CONFIG.AUTOSAVE_SEC = 30;        // 自動保存の間隔（秒）
 RS.CONFIG.REC_FPS = 30;              // 録画のコマ数（1秒あたり）
 RS.CONFIG.REC_BITRATE = 2500000;     // 録画の画質（ビットレート）。上げるときれいになるが、ファイルとメモリが増える

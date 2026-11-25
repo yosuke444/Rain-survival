@@ -10,7 +10,7 @@
   const CK = RS.cook = {};
 
   // 食材の系統
-  RS.CATS = { fruit: '果物', veg: '野菜', herb: 'ハーブ', mushroom: 'きのこ', water: '水', egg: '卵', grain: '米・穀物', meat: '肉' };
+  RS.CATS = { fruit: '果物', veg: '野菜', herb: 'ハーブ', mushroom: 'きのこ', water: '水', sweet: '甘味', egg: '卵', grain: '米・穀物', meat: '肉' };
 
   // 食材（cats = 系統、color = 料理の見た目の色、eff = 手の込んだ料理にしたときの効果、val = 回復の元の値）
   RS.INGS = {
@@ -19,6 +19,7 @@
     herb:     { cats: ['veg', 'herb'], color: '#7cbf5a', eff: 'full', val: 10 },
     mushroom: { cats: ['mushroom'], color: '#c8a27a', eff: 'mine', val: 15 },
     water:    { cats: ['water'], color: '#bfe3f7', eff: 'jump', val: 6 },
+    jelly:    { cats: ['sweet'], color: '#8fc4ea', eff: 'guard', val: 14 },
   };
 
   // 調理器具（tier：1 = かんたん、2 = 手の込んだ）
@@ -34,6 +35,7 @@
     { tool: 'campfire', slots: [ANY_COOK], name: (a) => '焼き' + a[0], vessel: 'plate', motion: 'steak', hint: '何か1つ → 焼き〇〇' },
     { tool: 'board', slots: [['fruit'], ['water']], name: (a) => a[0] + 'ジュース', vessel: 'straw', motion: 'straw', kind: 'drink', hint: '果物＋水 → ジュース' },
     { tool: 'board', slots: [['fruit'], ['fruit']], name: (a) => (a[0] === a[1] ? a[0] + 'もり' : a[0] + 'と' + a[1] + 'のフルーツもり'), vessel: 'plate', motion: 'steak', hint: '果物＋果物 → フルーツもり' },
+    { tool: 'board', slots: [['fruit'], ['sweet']], name: (a) => a[0] + 'ゼリー', vessel: 'plate', motion: 'steak', hint: '果物＋甘味 → 〇〇ゼリー' },
     { tool: 'board', slots: [['egg'], ['grain']], name: () => 'たまごかけごはん', vessel: 'bowl', motion: 'bowl', hint: '卵＋米 → たまごかけごはん' },
     { tool: 'pot', slots: [['veg', 'mushroom', 'meat'], ['water']], name: (a) => a[0] + 'のスープ', vessel: 'bowl', motion: 'bowl', hint: '野菜/きのこ/肉＋水 → スープ' },
     { tool: 'pot', slots: [['herb'], ['water']], name: (a) => a[0] + 'ティー', vessel: 'cup', motion: 'cup', kind: 'drink', hint: 'ハーブ＋水 → ティー' },

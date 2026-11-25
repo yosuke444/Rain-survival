@@ -252,6 +252,11 @@
       if (id === 'water') S.shape(g, [[21.5, 28], [42.5, 28], [41, 50], [23, 50]], { fill: '#bfe3f7', seed: 22, amp: 0.4, step: 8 });
       return;
     }
+    if (id === 'jelly') {
+      S.shape(g, [[16, 50], [18, 26], [32, 18], [46, 26], [48, 50]], { fill: 'rgba(143,196,234,0.9)', stroke: L, lw: 3, seed: 31, amp: 0.6, step: 8 });
+      g.fillStyle = 'rgba(255,255,255,0.7)'; g.beginPath(); g.ellipse(25, 30, 4, 7, -0.3, 0, Math.PI * 2); g.fill();
+      return;
+    }
     if (id === 'dish') return;
     if (id === 'stick') {
       S.line(g, [[16, 50], [48, 14]], { stroke: L, lw: 9, amp: 0.8, step: 10 });

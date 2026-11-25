@@ -113,6 +113,10 @@
       bar(g, px + 10 + labW, cy - L.barH / 2, L.barW, L.barH, frac, color, seed);
     });
     let ly = py + rowH * 2 + 24;
+    // 時刻
+    const night = RS.enemy.isNight(game);
+    ui.text(g, (night ? '☾ ' : '☀ ') + RS.enemy.label(game), px + 8, ly, lab * 0.9, { color: night ? '#5a5f9a' : '#c08a2c', outline: COL.cream });
+    ly += lab * 1.2;
     if (p.food <= 0) { ui.text(g, 'おなかぺこぺこ：ダメージ増', px + 8, ly, lab * 0.85, { color: '#b5543f', outline: COL.cream }); ly += lab * 1.2; }
     // 食事中のすすみぐあい
     if (game.eating) {
