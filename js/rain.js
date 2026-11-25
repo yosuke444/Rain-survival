@@ -11,12 +11,16 @@
     spawn(d, v, anywhere, speed, len) {
       d.x = v.x0 - 3 + Math.random() * (v.x1 - v.x0 + 6);
       d.y = anywhere ? v.y0 - 2 + Math.random() * (v.y1 - v.y0 + 4) : v.y0 - 1 - Math.random() * 3;
+      // 傘の下限の雨雲から降らせる（上が傘で守られていても、雲の下は酸性雨）
+      const w = this.sw; // 酸性雨のときだけ（普通の雨は null）
+      if (!anywhere && w && w.isProtected(d.x, d.y) && w.umb.floor > v.y0 && w.umb.floor < v.y1 && Math.abs(d.x - w.umb.x) <= w.umb.R) d.y = w.umb.floor + 0.3 + Math.random() * 0.4;
       d.v = speed * (0.85 + Math.random() * 0.3);
       d.len = len * (0.7 + Math.random() * 0.6);
       return d;
     }
 
     step(list, n, dt, v, speed, len, world) {
+      this.sw = world;
       while (list.length < n) list.push(this.spawn({}, v, true, speed, len));
       if (list.length > n) list.length = n;
       for (const d of list) {

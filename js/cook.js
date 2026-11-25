@@ -20,6 +20,7 @@
     mushroom: { cats: ['mushroom'], color: '#c8a27a', eff: 'mine', val: 15 },
     water:    { cats: ['water'], color: '#bfe3f7', eff: 'jump', val: 6 },
     jelly:    { cats: ['sweet'], color: '#8fc4ea', eff: 'guard', val: 14 },
+    skyfruit: { cats: ['fruit'], color: '#c9b8f0', eff: 'jump', val: 14 },
   };
 
   // 調理器具（tier：1 = かんたん、2 = 手の込んだ）

@@ -84,8 +84,38 @@
       return v > thr;
     }
 
+    // 空島（決まった場所に浮かぶ。種から作る）
+    islands() {
+      if (this._isl) return this._isl;
+      const r = RS.rng(this.seed * 7 + 13), list = [];
+      const s0 = this.surface(0);
+      for (let i = 0; i < 12; i++) {
+        // はじめの 3 つは低め・近め（傘レベル 2〜3 で届く）
+        let x = Math.round((r() * 2 - 1) * (i < 3 ? 26 : 80));
+        if (Math.abs(x) < 7) x += x < 0 ? -8 : 8;
+        const hgt = i < 3 ? 13 + i * 4 + Math.floor(r() * 3) : 14 + Math.floor(r() * 52);
+        list.push({ x, y: s0 - hgt, w: 5 + Math.floor(r() * 5), d: 3 + Math.floor(r() * 3), seed: i });
+      }
+      return (this._isl = list);
+    }
+    islandTile(x, y) {
+      for (const I of this.islands()) {
+        const dx = x - I.x;
+        if (Math.abs(dx) > I.w || y < I.y - 1 || y > I.y + I.d) continue;
+        const k = 1 - (dx / I.w) ** 2; // 下にいくほど細くなる
+        const bottom = I.y + Math.round(I.d * k + RS.hash(x, I.seed, this.seed) * 0.8);
+        const top = I.y + (Math.abs(dx) > I.w - 1 ? 1 : 0);
+        if (y < top || y > bottom) continue;
+        if (y === top) return T.SKYGRASS;
+        if (y > top + 1 && RS.hash(x, y, this.seed + 501) < 0.22) return T.SKYORE;
+        return y <= top + 1 ? T.DIRT : T.STONE;
+      }
+      return 0;
+    }
+
     genTile(x, y) {
       const s = this.surface(x);
+      if (y < s - 8) { const it = this.islandTile(x, y); if (it) return it; }
       if (y < s) {
         const h0 = this.treeAt(x);
         if (h0 && y >= s - h0 && y <= s - 1) return T.LOG;
@@ -147,13 +177,14 @@
       const R = C.UMBRELLA_RADII;
       this.umb.level = Math.max(1, Math.min(R.length, level));
       this.umb.R = R[this.umb.level - 1];
-      this.umb.rim = this.surface(0) - (C.UMBRELLA_HEIGHT + (this.umb.level - 1) * 3);
+      this.umb.rim = this.surface(0) - C.UMBRELLA_HEIGHTS[this.umb.level - 1];
+      this.umb.floor = this.surface(0) + C.UMBRELLA_DEPTHS[this.umb.level - 1]; // 下限（ここに雨雲）
       this.umb.peak = this.umb.rim - 6 - this.umb.level;
     }
     // 酸性雨が届かない場所か（傘の範囲内で、傘より下）
     isProtected(x, y) {
       const c = this.canopyY(x);
-      return c !== null && y >= c;
+      return c !== null && y >= c && y <= this.umb.floor;
     }
 
     // ---- 苗木の成長 ----

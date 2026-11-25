@@ -89,6 +89,16 @@
         }
         break;
       }
+      case T.SKYGRASS: {
+        g.fillStyle = '#e8dcc6'; g.fillRect(0, 0, u, u);
+        specks(g, u, r, '#c8b89c', 3, 0.45);
+        const wave = [];
+        for (let i = 4; i >= 0; i--) wave.push([(i / 4) * u, (0.3 + (i % 2 ? 0.08 : 0)) * u]);
+        g.beginPath(); g.moveTo(0, 0); g.lineTo(u, 0); for (const p of wave) g.lineTo(p[0], p[1]); g.closePath();
+        g.fillStyle = '#bfe8c8'; g.fill();
+        S.line(g, wave, { stroke: '#8cc4a0', lw: u * 0.04, amp: 0 });
+        break;
+      }
       case T.STONE:
         g.fillStyle = COL.stone; g.fillRect(0, 0, u, u);
         specks(g, u, r, COL.stoneDark, 3);
@@ -191,13 +201,13 @@
         }
         break;
       }
-      case T.COPPER: case T.IRON: case T.CRYSTAL: {
+      case T.COPPER: case T.IRON: case T.CRYSTAL: case T.SKYORE: {
         g.fillStyle = COL.stone; g.fillRect(0, 0, u, u);
         specks(g, u, r, COL.stoneDark, 2);
         const c = RS.TILES[type].color;
         for (let i = 0; i < 4; i++) {
           const x = (0.18 + r() * 0.64) * u, y = (0.18 + r() * 0.64) * u, rr = (0.07 + r() * 0.06) * u;
-          if (type === T.CRYSTAL) S.shape(g, [[x, y - rr * 1.6], [x + rr, y], [x, y + rr * 1.3], [x - rr, y]], { fill: c, stroke: L, lw: u * 0.03, seed: sd(r), amp: u * 0.005 });
+          if (type === T.CRYSTAL || type === T.SKYORE) S.shape(g, [[x, y - rr * 1.6], [x + rr, y], [x, y + rr * 1.3], [x - rr, y]], { fill: c, stroke: L, lw: u * 0.03, seed: sd(r), amp: u * 0.005 });
           else S.ellipse(g, x, y, rr, rr * 0.8, { fill: c, stroke: L, lw: u * 0.03, seed: sd(r), amp: u * 0.008, n: 8 });
         }
         break;
@@ -298,7 +308,23 @@
       S.ellipse(g, 32, 32, 20, 17, { stroke: L, lw: 3, seed: t, amp: 0.8, n: 12 });
       return;
     }
-    if (id === 'copper_ingot' || id === 'iron_ingot') {
+    if (id === 'skystone') {
+      g.save(); g.translate(12, 12); g.beginPath(); S.trace(g, S.ellipsePts(20, 20, 20, 17, 12), true); g.clip();
+      drawTileArt(g, T.SKYORE, 40, RS.rng(77)); g.restore();
+      S.ellipse(g, 32, 32, 20, 17, { stroke: L, lw: 3, seed: 78, amp: 0.8, n: 12 });
+      return;
+    }
+    if (id === 'cotton') {
+      for (const [x, y, r2] of [[24, 36, 12], [38, 34, 13], [31, 26, 11]]) S.ellipse(g, x, y, r2, r2 * 0.85, { fill: '#ffffff', stroke: L, lw: 2.5, seed: x, amp: 0.8, step: 6 });
+      return;
+    }
+    if (id === 'skyfruit') {
+      S.ellipse(g, 32, 36, 15, 15, { fill: '#c9b8f0', stroke: L, lw: 3, seed: 81, amp: 0.8, step: 8 });
+      S.shape(g, [[30, 22], [36, 12], [44, 16]], { fill: '#bfe8c8', stroke: L, lw: 2, seed: 82, amp: 0.4 });
+      g.fillStyle = 'rgba(255,255,255,0.6)'; g.beginPath(); g.ellipse(26, 32, 3, 5, -0.3, 0, Math.PI * 2); g.fill();
+      return;
+    }
+        if (id === 'copper_ingot' || id === 'iron_ingot') {
       const c = id === 'copper_ingot' ? '#e09a6a' : '#d8d4cc';
       S.shape(g, [[12, 44], [20, 26], [50, 26], [54, 44]], { fill: c, stroke: L, lw: 3, seed: 41, amp: 0.6, step: 8 });
       S.line(g, [[22, 30], [46, 30]], { stroke: 'rgba(255,255,255,0.7)', lw: 3, amp: 0 });

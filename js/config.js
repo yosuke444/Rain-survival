@@ -54,6 +54,7 @@ RS.CONFIG = {
   SAPLING_CHANCE: 0.15,  // 葉を取ったときに苗木が出る確率
   BERRY_CHANCE: 0.1,     // 草を掘ったときに野いちごが出る確率
   HERB_CHANCE: 0.12,     // 草を掘ったときに野草が出る確率
+  SKYFRUIT_CHANCE: 0.25, // 空の草を掘ったときにそらのみが出る確率
   SAPLING_GROW_MIN: 90,  // 苗木が木になるまでの最短秒数
   SAPLING_GROW_MAX: 180, // 苗木が木になるまでの最長秒数
 
@@ -88,3 +89,5 @@ RS.CONFIG.FFMPEG_CORE_URL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/';
 
 // ---- 傘の成長（仮） ----
 RS.CONFIG.UMBRELLA_RADII = [24, 32, 42, 54, 68, 84]; // 段階ごとの半径（マス）。最後が max
+RS.CONFIG.UMBRELLA_HEIGHTS = [10, 18, 28, 40, 54, 70]; // 段階ごとの傘のふちの高さ（地面から。マス）。これより上には置けない
+RS.CONFIG.UMBRELLA_DEPTHS = [40, 70, 110, 160, 220, 300]; // 段階ごとの行ける深さ（地面から。マス）。下限には雨雲

@@ -8,7 +8,7 @@
   // ブロックの番号
   const T = RS.T = { AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, LOG: 4, LEAVES: 5, PLANKS: 6, TABLE: 7, SAPLING: 8, CHAIR_R: 9, CHAIR_L: 10,
     CAMPFIRE: 11, BOARD: 12, POT: 13, PAN: 14, MUSHROOM: 15,
-    COPPER: 16, IRON: 17, CRYSTAL: 18, FURNACE: 19, ALTAR: 20, DOOR: 21 };
+    COPPER: 16, IRON: 17, CRYSTAL: 18, FURNACE: 19, ALTAR: 20, DOOR: 21, SKYORE: 22, SKYGRASS: 23 };
 
   // solid: ぶつかるか / terrain: 地形として縁取りするか / hard: 素手で掘る秒数
   // tool: 速く掘れる道具 / needTool: その道具がないと掘れない / drop: 掘ると手に入るアイテム
@@ -36,6 +36,9 @@
   RS.TILES[T.COPPER] = { name: '銅鉱石', solid: true, terrain: true, hard: 2.0, tool: 'pickaxe', needTool: true, needTier: 2, drop: 'copper_ore', color: '#d98a5a', ore: 3 };
   RS.TILES[T.IRON] = { name: '鉄鉱石', solid: true, terrain: true, hard: 2.6, tool: 'pickaxe', needTool: true, needTier: 3, drop: 'iron_ore', color: '#c9b9a8', ore: 6 };
   RS.TILES[T.CRYSTAL] = { name: 'しずく石', solid: true, terrain: true, hard: 3.2, tool: 'pickaxe', needTool: true, needTier: 4, drop: 'crystal', color: '#9fd8f5', ore: 15 };
+  // 空島（そらいし：空島だけの鉱石、空島の草：そらのみ が見つかる）
+  RS.TILES[T.SKYORE] = { name: 'そらいし', solid: true, terrain: true, hard: 2.2, tool: 'pickaxe', needTool: true, needTier: 2, drop: 'skystone', color: '#c9b8f0', ore: 5 };
+  RS.TILES[T.SKYGRASS] = { name: '空の草', solid: true, terrain: true, hard: 0.6, tool: 'shovel', drop: 'dirt', color: '#bfe8c8' };
   RS.TILES[T.FURNACE] = { name: 'かまど', solid: false, hard: 1.4, tool: 'pickaxe', drop: 'furnace', color: '#9a9aa6', utensil: true };
   // 傘の台座（こわせない）。近くで X を押すと傘の画面
   RS.TILES[T.ALTAR] = { name: '傘の台座', solid: false, hard: Infinity, tool: null, drop: null, color: '#f4ead8', unbreakable: true };
@@ -70,6 +73,9 @@
     iron_ore:      { name: '鉄鉱石' },
     crystal:       { name: 'しずく石' },
     copper_ingot:  { name: '銅のインゴット' },
+    skystone:      { name: 'そらいし' },
+    cotton:        { name: 'ふわふわわた' },
+    skyfruit:      { name: 'そらのみ', food: { kind: 'eat', amount: 12, motion: 'bite', dur: 5, look: { main: '#c9b8f0' } } },
     iron_ingot:    { name: '鉄のインゴット' },
     furnace:       { name: 'かまど', place: T.FURNACE },
     // 料理（名前・見た目・効果はスタックのデータに入る）

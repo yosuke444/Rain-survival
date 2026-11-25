@@ -578,6 +578,7 @@
         if (Math.random() < C.SAPLING_CHANCE) gained.push('sapling');
       } else if (td.drop) gained.push(td.drop);
       if (td.ore) RS.prog.addCP(this, td.ore, td.name);
+      if (tile === T.SKYGRASS && Math.random() < C.SKYFRUIT_CHANCE) gained.push('skyfruit');
       if (tile === T.GRASS) { // 草からは、ときどき食材が見つかる
         if (Math.random() < C.BERRY_CHANCE) gained.push('berry');
         if (Math.random() < C.HERB_CHANCE) gained.push('herb');
@@ -592,6 +593,7 @@
     canPlace(x, y, def) {
       const w = this.world;
       if (w.get(x, y) !== T.AIR) return false;
+      if (y < w.umb.peak) return false; // 傘より高い所には置けない
       const td = RS.TILES[def.place];
       const p = this.player;
       if (td.solid && p.x < x + 1 && p.x + p.w > x && p.y < y + 1 && p.y + p.h > y) return false;
@@ -707,6 +709,7 @@
       this.rain.drawNormal(g, this);
       this.drawUmbrella(g);
       this.drawTerrain(g);
+      this.drawFloorClouds(g);
       RS.enemy.draw(g, this);
       this.drawPlayer(g);
       this.rain.drawAcid(g, this);
@@ -734,6 +737,22 @@
         else RS.ui.drawScreen(g, this, name);
       }
       this.drawFlash(g);
+    }
+
+    // 傘の下限にわいている、酸性雨の雨雲
+    drawFloorClouds(g) {
+      const w = this.world, v = this.viewRect(), Tp = this.T;
+      const fy = w.umb.floor;
+      if (fy < v.y0 - 2 || fy > v.y1 + 3) return;
+      const ox = this.ox(), oy = this.oy();
+      const x0 = Math.max(Math.floor(v.x0) - 2, Math.floor(w.umb.x - w.umb.R) - 2), x1 = Math.min(Math.ceil(v.x1) + 2, Math.ceil(w.umb.x + w.umb.R) + 2);
+      for (let x = x0; x <= x1; x += 2) {
+        const bob = Math.sin(this.time * 0.8 + x * 0.7) * 0.12;
+        const r = (0.9 + RS.hash(x, 3, 17) * 0.6) * Tp;
+        S.ellipse(g, ox + (x + 0.5) * Tp, oy + (fy + 0.6 + bob) * Tp, r * 1.2, r * 0.75,
+          { fill: '#3e3a48', stroke: '#24202c', lw: Math.max(1.5, Tp * 0.05), seed: 1400 + x, amp: Tp * 0.04, step: Tp * 0.4 });
+      }
+      if (Math.abs(this.player.y + this.player.h - fy) < 6) RS.ui.text(g, 'ここから下は 酸性雨の雨雲', this.ox() + this.player.cx() * Tp, oy + (fy - 0.4) * Tp, Tp * 0.36, { align: 'center', color: '#f6e7cc', outline: '#3e3a48' });
     }
 
     // 傘の台座のそばで「Z：しらべる」を出す

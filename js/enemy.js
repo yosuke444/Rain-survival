@@ -34,6 +34,8 @@
   RS.ENEMIES = {
     shizukun: { name: 'しずくん', hp: 12, dmg: 8, speed: 2.2, jump: 0.75, w: 0.8, h: 0.8, night: true, color: '#8fc4ea',
       drops: [['jelly', 1, 0.8]] },
+    fuwakko: { name: 'ふわっこ', hp: 16, dmg: 9, speed: 2.0, jump: 0.7, w: 0.9, h: 0.7, sky: true, color: '#ffffff',
+      drops: [['cotton', 1, 0.9], ['skyfruit', 1, 0.3]] },
     ishikoron: { name: 'いしころん', hp: 22, dmg: 10, speed: 1.6, jump: 0.6, w: 0.9, h: 0.85, cave: true, color: '#b8b2a8',
       drops: [['stone', 2, 1], ['mushroom', 1, 0.3]] },
   };
@@ -80,16 +82,33 @@
         if (Math.hypot(x - p.cx(), y - p.cy()) < 9) continue;
         if (y <= w.surface(x) + 6) continue;
         if (w.get(x, y) !== RS.T.AIR || w.get(x, y - 1) !== RS.T.AIR || !RS.TILES[w.get(x, y + 1)].solid) continue;
+        if (!w.isProtected(x + 0.5, y)) continue;
         list.push(new Enemy('ishikoron', x + 0.05, y + 1 - RS.ENEMIES.ishikoron.h - 0.01));
         return;
       }
     }
   }
 
+  // 空島の敵：プレイヤーが空島の高さにいるとき、近くの空島の上に出る
+  function trySky(game) {
+    const w = game.world, p = game.player;
+    if (p.y > w.surface(Math.floor(p.cx())) - 10) return;
+    if (game.enemies.filter((e) => e.def.sky).length >= 2) return;
+    for (const I of w.islands()) {
+      if (Math.abs(I.x - p.cx()) > 22 || Math.abs(I.y - p.y) > 14) continue;
+      if (!w.isProtected(I.x + 0.5, I.y - 1)) continue;
+      const x = I.x + Math.floor((Math.random() * 2 - 1) * (I.w - 2));
+      if (Math.abs(x + 0.5 - p.cx()) < 3) continue; // プレイヤーのすぐそばには出さない
+      if (w.get(x, I.y - 1) !== RS.T.AIR || w.get(x, I.y - 2) !== RS.T.AIR || !RS.TILES[w.get(x, I.y)].solid) continue;
+      game.enemies.push(new Enemy('fuwakko', x + 0.05, I.y - RS.ENEMIES.fuwakko.h - 0.01));
+      return;
+    }
+  }
+
   EN.update = function (game, dt) {
     const p = game.player, w = game.world;
     game.spawnT = (game.spawnT || 0) - dt;
-    if (game.spawnT <= 0) { game.spawnT = C.ENEMY_SPAWN_SEC; trySpawn(game); }
+    if (game.spawnT <= 0) { game.spawnT = C.ENEMY_SPAWN_SEC; trySpawn(game); trySky(game); }
     const night = EN.isNight(game);
     for (const e of game.enemies) {
       e.t += dt;
@@ -185,6 +204,9 @@
       if (e.type === 'shizukun') {
         S.shape(g, [[0, -h], [w * 0.35, -h * 0.45], [w * 0.5, -h * 0.15], [w * 0.3, 0], [-w * 0.3, 0], [-w * 0.5, -h * 0.15], [-w * 0.35, -h * 0.45]], o(1101, e.def.color));
         g.fillStyle = 'rgba(255,255,255,0.6)'; g.beginPath(); g.ellipse(-w * 0.18, -h * 0.55, w * 0.07, h * 0.12, -0.3, 0, Math.PI * 2); g.fill();
+      } else if (e.type === 'fuwakko') {
+        for (const [cx, cy, r] of [[-0.25, -0.4, 0.3], [0.2, -0.45, 0.32], [0, -0.65, 0.3]]) S.ellipse(g, w * cx, h * cy, w * r, w * r * 0.85, o(1103, '#ffffff'));
+        g.fillStyle = 'rgba(245,140,170,0.5)'; g.beginPath(); g.ellipse(w * 0.32, -h * 0.28, Tp * 0.06, Tp * 0.04, 0, 0, Math.PI * 2); g.fill();
       } else {
         S.shape(g, [[-w * 0.5, 0], [-w * 0.45, -h * 0.6], [-w * 0.15, -h], [w * 0.3, -h * 0.9], [w * 0.5, -h * 0.4], [w * 0.45, 0]], o(1102, e.def.color));
         S.line(g, [[-w * 0.25, -h * 0.75], [-w * 0.1, -h * 0.65]], { stroke: COL.stoneDark || '#8d877c', lw: Tp * 0.04, amp: 0 });
