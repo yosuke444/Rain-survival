@@ -7,7 +7,8 @@
 
   // ブロックの番号
   const T = RS.T = { AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, LOG: 4, LEAVES: 5, PLANKS: 6, TABLE: 7, SAPLING: 8, CHAIR_R: 9, CHAIR_L: 10,
-    CAMPFIRE: 11, BOARD: 12, POT: 13, PAN: 14, MUSHROOM: 15 };
+    CAMPFIRE: 11, BOARD: 12, POT: 13, PAN: 14, MUSHROOM: 15,
+    COPPER: 16, IRON: 17, CRYSTAL: 18, FURNACE: 19, ALTAR: 20, DOOR: 21 };
 
   // solid: ぶつかるか / terrain: 地形として縁取りするか / hard: 素手で掘る秒数
   // tool: 速く掘れる道具 / needTool: その道具がないと掘れない / drop: 掘ると手に入るアイテム
@@ -31,6 +32,15 @@
   RS.TILES[T.PAN] = { name: 'フライパン', solid: false, hard: 1.2, tool: 'pickaxe', drop: 'pan', color: '#5f6b8a', utensil: true };
   // 洞窟の床に生えるきのこ
   RS.TILES[T.MUSHROOM] = { name: 'きのこ', solid: false, hard: 0.1, tool: null, drop: 'mushroom', color: '#c8a27a' };
+  // 鉱石（needTier：掘るのに必要なツルハシの強さ。1 木 / 2 石 / 3 銅 / 4 鉄）
+  RS.TILES[T.COPPER] = { name: '銅鉱石', solid: true, terrain: true, hard: 2.0, tool: 'pickaxe', needTool: true, needTier: 2, drop: 'copper_ore', color: '#d98a5a', ore: 3 };
+  RS.TILES[T.IRON] = { name: '鉄鉱石', solid: true, terrain: true, hard: 2.6, tool: 'pickaxe', needTool: true, needTier: 3, drop: 'iron_ore', color: '#c9b9a8', ore: 6 };
+  RS.TILES[T.CRYSTAL] = { name: 'しずく石', solid: true, terrain: true, hard: 3.2, tool: 'pickaxe', needTool: true, needTier: 4, drop: 'crystal', color: '#9fd8f5', ore: 15 };
+  RS.TILES[T.FURNACE] = { name: 'かまど', solid: false, hard: 1.4, tool: 'pickaxe', drop: 'furnace', color: '#9a9aa6', utensil: true };
+  // 傘の台座（こわせない）。近くで X を押すと傘の画面
+  RS.TILES[T.ALTAR] = { name: '傘の台座', solid: false, hard: Infinity, tool: null, drop: null, color: '#f4ead8', unbreakable: true };
+  // 傘を最大にすると出るドア（こわせない）
+  RS.TILES[T.DOOR] = { name: '世界のドア', solid: false, hard: Infinity, tool: null, drop: null, color: '#e58c6c', unbreakable: true };
 
   // アイテム。place: 設置するとなるブロック / food: 食べられる / max: 重ねられる数
   RS.ITEMS = {
@@ -55,6 +65,13 @@
     board:    { name: 'まな板', place: T.BOARD },
     pot:      { name: 'なべ', place: T.POT },
     pan:      { name: 'フライパン', place: T.PAN },
+    // 鉱石・インゴット
+    copper_ore:    { name: '銅鉱石' },
+    iron_ore:      { name: '鉄鉱石' },
+    crystal:       { name: 'しずく石' },
+    copper_ingot:  { name: '銅のインゴット' },
+    iron_ingot:    { name: '鉄のインゴット' },
+    furnace:       { name: 'かまど', place: T.FURNACE },
     // 料理（名前・見た目・効果はスタックのデータに入る）
     dish:     { name: '料理', food: true, max: 10 },
   };
@@ -68,7 +85,7 @@
 
   // ツール（クラフトテーブルが必要）
   const tools = [['pickaxe', 'ツルハシ'], ['axe', 'アックス'], ['shovel', 'シャベル'], ['sword', 'ソード']];
-  const mats = [['wood', '木の', 1, 'planks'], ['stone', '石の', 2, 'stone']];
+  const mats = [['wood', '木の', 1, 'planks'], ['stone', '石の', 2, 'stone'], ['copper', '銅の', 3, 'copper_ingot'], ['iron', '鉄の', 4, 'iron_ingot']];
   const toolIn = { pickaxe: [3, 2], axe: [2, 2], shovel: [1, 2], sword: [2, 1] }; // [素材の数, 棒の数]
   for (const [mid, mname, tier, mat] of mats) {
     for (const [tid, tname] of tools) {
@@ -86,5 +103,6 @@
   RS.RECIPES.push({ out: 'cup', n: 2, table: true, in: ['planks', 'stick'] });
   RS.RECIPES.push({ out: 'pot', n: 1, table: true, in: ['stone', 'stone', 'stone', 'stone'] });
   RS.RECIPES.push({ out: 'pan', n: 1, table: true, in: ['stone', 'stone', 'planks'] });
+  RS.RECIPES.push({ out: 'furnace', n: 1, table: true, in: ['stone', 'stone', 'stone', 'log'] });
   for (const r of RS.RECIPES) r.key = [...r.in].sort().join('|');
 })();

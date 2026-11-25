@@ -39,6 +39,7 @@
       this.worldId = null; this.worldName = ''; this.worldCreated = 0;
       this.effects = []; this.eating = null; // 特殊効果・食事中
       this.clock = C.DAY_SEC * 0.1; this.atkCd = 0; RS.enemy.reset(this); // 時刻・敵
+      RS.prog.reset(this); // 傘の成長
       this.saveT = 0; this.savedT = 0;
       const saveNow = () => RS.save.saveCurrent(this, true);
       document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
@@ -102,6 +103,7 @@
       this.time = 0; this.saveT = 0;
       this.effects = []; this.eating = null;
       this.clock = C.DAY_SEC * 0.1; this.atkCd = 0; RS.enemy.reset(this);
+      RS.prog.reset(this);
       this.spawn();
       this.cam.x = this.player.cx(); this.cam.y = this.player.cy() - 2;
     }
@@ -204,6 +206,8 @@
       this.clock += dt;
       this.atkCd = Math.max(0, this.atkCd - dt);
       RS.enemy.update(this, dt);
+      RS.prog.update(this, dt);
+      const um = this.world.umb; um.dispR += (um.R - um.dispR) * Math.min(1, dt * 1.2); // 傘が広がるようす
       p.swingT = Math.max(0, p.swingT - dt);
 
       if (playing) this.updateUse(dt, useHeld);
@@ -479,6 +483,15 @@
       if (this.mineLock) return;
       if (!t || !t.valid) { this.mine.key = null; if (usePressed) this.explain(t, false); return; }
       const tile = this.world.get(t.x, t.y);
+      // 傘の台座・ドアは「しらべる」
+      if (tile === T.ALTAR || tile === T.DOOR) {
+        this.mine.key = null;
+        if (usePressed) {
+          if (tile === T.ALTAR) RS.openUmbrella(this);
+          else this.toast('ドアの先の世界は、つぎの開発でつながります（プロトタイプ）');
+        }
+        return;
+      }
       const info = this.mineInfo(tile, def);
       if (!info.ok) { if (usePressed) this.toast(info.msg); this.mine.key = null; return; }
       const drop = RS.TILES[tile].drop;
@@ -518,6 +531,7 @@
       const td = RS.TILES[tile];
       const right = !!(def && def.tool && def.tool === td.tool);
       if (td.needTool && !right) return { ok: false, msg: td.name + 'を ほるには ツルハシが ひつよう' };
+      if (td.needTier && def.tier < td.needTier) return { ok: false, msg: td.name + 'を ほるには ' + ['', '木', '石', '銅', '鉄'][td.needTier] + 'のツルハシ以上が ひつよう' };
       const mult = (right ? C.TOOL_MULT[def.tier] : 1) * RS.meal.mult(this, 'mine');
       return { ok: true, time: td.hard / mult };
     }
@@ -530,6 +544,7 @@
         if (Math.random() < C.APPLE_CHANCE) gained.push('apple');
         if (Math.random() < C.SAPLING_CHANCE) gained.push('sapling');
       } else if (td.drop) gained.push(td.drop);
+      if (td.ore) RS.prog.addCP(this, td.ore, td.name);
       if (tile === T.GRASS) { // 草からは、ときどき食材が見つかる
         if (Math.random() < C.BERRY_CHANCE) gained.push('berry');
         if (Math.random() < C.HERB_CHANCE) gained.push('herb');
@@ -676,6 +691,7 @@
       }
       if (this.pm) { this.drawFlash(g); return; }
       if (!this.screens.includes('title')) {
+        this.drawAltarHint(g);
         RS.ui.drawHUD(g, this);
         if (this.state === 'menu') RS.ui.drawMenu(g, this);
       }
@@ -687,6 +703,17 @@
       this.drawFlash(g);
     }
 
+    // 傘の台座のそばで「Z：しらべる」を出す
+    drawAltarHint(g) {
+      const p = this.player, Tp = this.T, w = this.world;
+      for (const [x, label] of [[1, '傘の台座（Z でしらべる）'], [-1, '世界のドア']]) {
+        const y = w.surface(x) - 1;
+        const t = w.get(x, y);
+        if ((t !== T.ALTAR && t !== T.DOOR) || Math.hypot(x + 0.5 - p.cx(), y + 0.5 - p.cy()) > 3) continue;
+        RS.ui.text(g, label, this.ox() + (x + 0.5) * Tp, this.oy() + (y - 0.4) * Tp, Tp * 0.38, { align: 'center', outline: COL.cream });
+      }
+    }
+
     drawFlash(g) {
       if (this.flashT > 0) { // 撮影したときの白い光
         g.fillStyle = `rgba(255,255,255,${(this.flashT / 0.3) * 0.7})`;
@@ -696,7 +723,7 @@
 
     drawUmbrella(g) {
       const w = this.world, Tp = this.T, ox = this.ox(), oy = this.oy();
-      const R = C.UMBRELLA_RADIUS, x0 = w.umb.x, rim = w.umb.rim, peak = w.umb.peak;
+      const R = w.umb.dispR, x0 = w.umb.x, rim = w.umb.rim, peak = w.umb.peak;
       const v = this.viewRect();
       const ground = w.surface(0);
       if (x0 + R < v.x0 - 2 || x0 - R > v.x1 + 2 || peak - 2 > v.y1 || ground < v.y0) return;

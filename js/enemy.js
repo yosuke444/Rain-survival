@@ -56,7 +56,7 @@
 
   // ---- 出現 ----
   function trySpawn(game) {
-    const w = game.world, p = game.player, R = C.UMBRELLA_RADIUS;
+    const w = game.world, p = game.player, R = w.umb.R;
     const list = game.enemies;
     const night = EN.isNight(game);
     const under = p.y > w.surface(Math.floor(p.cx())) + 3;
@@ -160,6 +160,7 @@
     if (e.hp <= 0) {
       e.gone = true;
       poof(game, e);
+      RS.prog.addCP(game, 1, 'たおした');
       let off = 0;
       for (const [id, n, ch] of e.def.drops) {
         if (Math.random() > ch) continue;

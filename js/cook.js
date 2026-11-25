@@ -28,6 +28,9 @@
   RS.UTENSILS[T.BOARD] = { id: 'board', name: 'まな板', tier: 1 };
   RS.UTENSILS[T.POT] = { id: 'pot', name: 'なべ', tier: 2 };
   RS.UTENSILS[T.PAN] = { id: 'pan', name: 'フライパン', tier: 2 };
+  RS.UTENSILS[T.FURNACE] = { id: 'furnace', name: 'かまど', tier: 0, smelt: true };
+  // かまど：鉱石＋木 → インゴット
+  const SMELT = { copper_ore: 'copper_ingot', iron_ore: 'iron_ingot' };
 
   // 料理の型。slots = それぞれの枠に入れてよい系統
   const ANY_COOK = ['fruit', 'veg', 'mushroom', 'meat', 'egg'];
@@ -43,7 +46,7 @@
     { tool: 'pan', slots: [['veg', 'mushroom', 'meat', 'egg'], ['veg', 'mushroom', 'meat', 'egg']], name: (a) => (a[0] === a[1] ? a[0] + 'いため' : a[0] + 'と' + a[1] + 'のいため'), vessel: 'plate', motion: 'steak', hint: '野菜/きのこ/肉/卵 ×2 → いため' },
     { tool: 'pan', slots: [['fruit']], name: (a) => a[0] + 'のソテー', vessel: 'plate', motion: 'steak', hint: '果物 → ソテー' },
   ];
-  CK.hints = (toolId) => RS.DISHES.filter((d) => d.tool === toolId).map((d) => d.hint);
+  CK.hints = (toolId) => (toolId === 'furnace' ? ['鉱石＋木 → インゴット'] : RS.DISHES.filter((d) => d.tool === toolId).map((d) => d.hint));
 
   // 食材の並びが料理の枠に合うか（順番は自由）
   function fit(ids, slots) {
@@ -60,6 +63,11 @@
   CK.match = function (ids, toolTile) {
     const ut = RS.UTENSILS[toolTile];
     if (!ut || !ids.length) return null;
+    if (ut.smelt) {
+      if (ids.length !== 2 || !ids.includes('log')) return null;
+      const ore = ids.find((id) => SMELT[id]);
+      return ore ? { out: SMELT[ore], n: 1 } : null;
+    }
     for (const d of RS.DISHES) {
       if (d.tool !== ut.id) continue;
       const order = fit(ids, d.slots);

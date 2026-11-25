@@ -191,6 +191,39 @@
         }
         break;
       }
+      case T.COPPER: case T.IRON: case T.CRYSTAL: {
+        g.fillStyle = COL.stone; g.fillRect(0, 0, u, u);
+        specks(g, u, r, COL.stoneDark, 2);
+        const c = RS.TILES[type].color;
+        for (let i = 0; i < 4; i++) {
+          const x = (0.18 + r() * 0.64) * u, y = (0.18 + r() * 0.64) * u, rr = (0.07 + r() * 0.06) * u;
+          if (type === T.CRYSTAL) S.shape(g, [[x, y - rr * 1.6], [x + rr, y], [x, y + rr * 1.3], [x - rr, y]], { fill: c, stroke: L, lw: u * 0.03, seed: sd(r), amp: u * 0.005 });
+          else S.ellipse(g, x, y, rr, rr * 0.8, { fill: c, stroke: L, lw: u * 0.03, seed: sd(r), amp: u * 0.008, n: 8 });
+        }
+        break;
+      }
+      case T.FURNACE: {
+        const o = (extra) => Object.assign({ stroke: L, lw: u * 0.05, seed: sd(r), amp: u * 0.01, step: u * 0.15 }, extra);
+        S.rect(g, 0.1 * u, 0.2 * u, 0.8 * u, 0.8 * u, o({ fill: '#a9a39a', r: 0.12 * u }));
+        S.rect(g, 0.28 * u, 0.55 * u, 0.44 * u, 0.35 * u, o({ fill: '#4a3a32', r: 0.15 * u }));
+        S.shape(g, [[0.38 * u, 0.88 * u], [0.5 * u, 0.62 * u], [0.62 * u, 0.88 * u]], o({ fill: '#f3a35b', lw: u * 0.03 }));
+        S.rect(g, 0.62 * u, 0.02 * u, 0.16 * u, 0.22 * u, o({ fill: '#a9a39a', r: 0.04 * u }));
+        break;
+      }
+      case T.ALTAR: {
+        const o = (extra) => Object.assign({ stroke: L, lw: u * 0.05, seed: sd(r), amp: u * 0.01, step: u * 0.15 }, extra);
+        S.rect(g, 0.15 * u, 0.55 * u, 0.7 * u, 0.45 * u, o({ fill: '#f4ead8', r: 0.08 * u }));
+        S.rect(g, 0.05 * u, 0.45 * u, 0.9 * u, 0.14 * u, o({ fill: '#f7d6d0', r: 0.05 * u }));
+        S.shape(g, [[0.5 * u, 0.08 * u], [0.62 * u, 0.3 * u], [0.5 * u, 0.42 * u], [0.38 * u, 0.3 * u]], o({ fill: '#9fd8f5', lw: u * 0.035 }));
+        break;
+      }
+      case T.DOOR: {
+        const o = (extra) => Object.assign({ stroke: L, lw: u * 0.05, seed: sd(r), amp: u * 0.01, step: u * 0.15 }, extra);
+        S.rect(g, 0.12 * u, 0.02 * u, 0.76 * u, 0.98 * u, o({ fill: '#e58c6c', r: 0.35 * u }));
+        S.rect(g, 0.24 * u, 0.16 * u, 0.52 * u, 0.36 * u, o({ fill: '#fdf0c8', r: 0.2 * u, lw: u * 0.035 }));
+        S.ellipse(g, 0.7 * u, 0.62 * u, 0.05 * u, 0.05 * u, o({ fill: '#f7d978', n: 8, lw: u * 0.03 }));
+        break;
+      }
       case T.SAPLING:
         S.line(g, [[0.5 * u, u], [0.47 * u, 0.75 * u], [0.52 * u, 0.5 * u]], { stroke: '#5f8f45', lw: u * 0.07, amp: 0 });
         S.ellipse(g, 0.36 * u, 0.54 * u, 0.14 * u, 0.07 * u, { fill: COL.leaf, stroke: L, lw: u * 0.035, seed: sd(r), amp: u * 0.01 });
@@ -257,6 +290,20 @@
       g.fillStyle = 'rgba(255,255,255,0.7)'; g.beginPath(); g.ellipse(25, 30, 4, 7, -0.3, 0, Math.PI * 2); g.fill();
       return;
     }
+    if (id === 'copper_ore' || id === 'iron_ore' || id === 'crystal') {
+      const t = id === 'copper_ore' ? T.COPPER : id === 'iron_ore' ? T.IRON : T.CRYSTAL;
+      g.save(); g.translate(12, 12);
+      g.beginPath(); S.trace(g, S.ellipsePts(20, 20, 20, 17, 12), true); g.clip();
+      drawTileArt(g, t, 40, RS.rng(t * 3)); g.restore();
+      S.ellipse(g, 32, 32, 20, 17, { stroke: L, lw: 3, seed: t, amp: 0.8, n: 12 });
+      return;
+    }
+    if (id === 'copper_ingot' || id === 'iron_ingot') {
+      const c = id === 'copper_ingot' ? '#e09a6a' : '#d8d4cc';
+      S.shape(g, [[12, 44], [20, 26], [50, 26], [54, 44]], { fill: c, stroke: L, lw: 3, seed: 41, amp: 0.6, step: 8 });
+      S.line(g, [[22, 30], [46, 30]], { stroke: 'rgba(255,255,255,0.7)', lw: 3, amp: 0 });
+      return;
+    }
     if (id === 'dish') return;
     if (id === 'stick') {
       S.line(g, [[16, 50], [48, 14]], { stroke: L, lw: 9, amp: 0.8, step: 10 });
@@ -272,7 +319,7 @@
       return;
     }
     if (it.tool) {
-      const head = it.mat === 'wood' ? '#dcae72' : '#bdb8ae';
+      const head = { wood: '#dcae72', stone: '#bdb8ae', copper: '#e09a6a', iron: '#dcdad6' }[it.mat];
       const handle = (a, b) => {
         S.line(g, [a, b], { stroke: L, lw: 8, amp: 0.6, step: 10 });
         S.line(g, [a, b], { stroke: COL.bark, lw: 4, amp: 0 });

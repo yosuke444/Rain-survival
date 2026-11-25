@@ -45,7 +45,7 @@ RS.CONFIG = {
   AUTO_REACH: 3,         // オートモードで届く距離（マス）
   MOUSE_REACH: 5,        // マウスモードで届く距離（マス）
   PLACE_INTERVAL: 0.22,  // 押しっぱなしで連続設置するときの間隔（秒）
-  TOOL_MULT: { 1: 2.5, 2: 4.0 }, // 道具の採掘速度の倍率（1=木, 2=石）
+  TOOL_MULT: { 1: 2.5, 2: 4.0, 3: 5.5, 4: 7.0 }, // 道具の採掘速度の倍率（1=木, 2=石, 3=銅, 4=鉄）
   TABLE_REACH: 4,        // クラフトテーブルが使える距離（マス）
 
   // ---- アイテム ----
@@ -85,3 +85,6 @@ RS.CONFIG.REC_BITRATE = 2500000;     // 録画の画質（ビットレート）�
 RS.CONFIG.REC_MAX_CHOICES = [30, 60, 120, 0]; // 最大録画時間の選択肢（分。0 = 無制限）
 // mp4 変換の本体（約 32MB）の置き場所
 RS.CONFIG.FFMPEG_CORE_URL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/';
+
+// ---- 傘の成長（仮） ----
+RS.CONFIG.UMBRELLA_RADII = [24, 32, 42, 54, 68, 84]; // 段階ごとの半径（マス）。最後が max

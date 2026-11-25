@@ -21,9 +21,13 @@
       this.modified = new Set(); // 掘ったり置いたりして変わったチャンク（保存する）
       this.lk = null; this.lc = null;
       this.theme = RS.THEMES.plains; // この世界の色
-      // 傘：中心のマスの真ん中に立つ
-      this.umb = { x: 0.5, rim: this.surface(0) - C.UMBRELLA_HEIGHT };
-      this.umb.peak = this.umb.rim - 6;
+      // 傘：中心のマスの真ん中に立つ。段階（level）で大きさが変わる
+      this.umb = { x: 0.5 };
+      this.setUmbrella(1);
+      this.umb.dispR = this.umb.R;
+      // 傘の台座（柱のすぐ右）
+      const ax = 1, ay = this.surface(1) - 1;
+      this.chunk(ax >> 5, ay >> 5)[(ay & 31) * CS + (ax & 31)] = T.ALTAR;
     }
 
     // ---- ノイズ ----
@@ -103,6 +107,11 @@
         return T.AIR;
       }
       if (depth <= 3 + (RS.hash(x, 7, this.seed) < 0.5 ? 1 : 0)) return T.DIRT;
+      // 鉱石：深いほど強いもの（小さなかたまりで出る）
+      const vein = (s, sc) => this.noise2(x / sc, y / sc, s);
+      if (depth > 45 && vein(431, 2.2) > 0.9) return T.CRYSTAL;
+      if (depth > 25 && vein(421, 2.6) > 0.86) return T.IRON;
+      if (depth > 8 && vein(411, 2.8) > 0.83) return T.COPPER;
       return T.STONE;
     }
 
@@ -129,9 +138,17 @@
     // ---- 傘 ----
     // 傘の上面の高さ（x が傘の範囲外なら null）
     canopyY(x) {
-      const dx = (x - this.umb.x) / C.UMBRELLA_RADIUS;
+      const dx = (x - this.umb.x) / this.umb.R;
       if (Math.abs(dx) > 1) return null;
-      return this.umb.peak + 9 * dx * dx;
+      return this.umb.peak + (this.umb.rim + 3 - this.umb.peak) * dx * dx;
+    }
+    // 傘の段階を変える（半径と高さが大きくなる）
+    setUmbrella(level) {
+      const R = C.UMBRELLA_RADII;
+      this.umb.level = Math.max(1, Math.min(R.length, level));
+      this.umb.R = R[this.umb.level - 1];
+      this.umb.rim = this.surface(0) - (C.UMBRELLA_HEIGHT + (this.umb.level - 1) * 3);
+      this.umb.peak = this.umb.rim - 6 - this.umb.level;
     }
     // 酸性雨が届かない場所か（傘の範囲内で、傘より下）
     isProtected(x, y) {
